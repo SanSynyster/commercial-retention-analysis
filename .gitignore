@@ -1,4 +1,16 @@
+# Python
 .venv/
 __pycache__/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Mac
 .DS_Store
+
+# Data
+data/raw/
 data/processed/
+
+# Environment
+.env
