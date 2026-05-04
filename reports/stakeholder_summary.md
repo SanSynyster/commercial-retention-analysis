@@ -1,25 +1,112 @@
-# Initial Data Audit Summary
+# Customer Retention & Revenue Analysis — Summary
 
-## Key Findings
+**Based on identifiable customers covering ~84% of analytical purchase revenue.**
 
-- Total rows analysed: 541,909
-- Gross positive purchase revenue: £10.67M
-- Net transactional revenue: £9.77M
-- Refund/cancellation revenue: -£0.90M
-- Valid identifiable customers: 4,338
-- Valid identifiable orders: 18,532
+---
 
-## Key Risks & Caveats
+## 1. Key Findings
 
-- 24.9% of rows are missing CustomerID values, limiting lifecycle analysis coverage.
-- Refunds and cancellations are materially significant and must be treated separately from behavioural retention metrics.
-- Duplicate rows were identified and require further validation before removal.
-- Revenue definitions must remain clearly separated between gross purchase revenue and net transactional revenue.
+- Repeat purchasing behaviour drives the majority of revenue.
+- Second purchase conversion appears strong, but repeat behaviour is not immediate.
+- Revenue is relatively concentrated among a small group of high-value customers.
+- Overall, retention mechanics are functioning, but performance depends on a narrow segment.
 
-## Next Steps
+---
 
-- Validate duplicate row behaviour
-- Build customer metrics layer
-- Create monthly retention cohorts
-- Analyse first-to-second purchase conversion
-- Build customer concentration analysis
+## 2. Retention Health
+
+- **Second purchase conversion:** 65.6%  
+- **Median time to second purchase:** 50 days
+
+Interpretation:
+
+- Conversion appears strong, though the exact level should be treated with some caution given dataset structure and filtering.
+- The **50-day median delay suggests a relatively slow repeat cycle**, rather than immediate replenishment behaviour.
+
+👉 **CRM opportunity:**  
+With a 50-day median return time, there is a clear opportunity to test **earlier engagement (e.g. 14–30 days post-purchase)** to accelerate repeat behaviour.
+
+---
+
+## 3. Revenue Dependency (Acquisition vs Retention)
+
+- **Repeat-order revenue:** 79.3% of identifiable revenue  
+- **First-order revenue:** 20.7%  
+- **Repeat-customer revenue:** 93.1%  
+- **One-time customer revenue:** 6.9%
+
+Interpretation:
+
+- Revenue is heavily driven by repeat behaviour rather than acquisition alone.
+- The gap between repeat-customer revenue (93%) and repeat-order revenue (79%) shows that retained customers contribute both initial and ongoing spend.
+- This indicates strong reliance on an existing customer base.
+
+---
+
+## 4. Customer Concentration
+
+- **Top 10% of customers contribute ~61% of revenue**
+
+Interpretation:
+
+- This is a relatively high level of concentration, though not unusual for e-commerce.
+- The risk depends on whether this revenue is spread across a broad repeat base or concentrated in a small number of very high-value customers.
+- Current evidence suggests performance is driven by a relatively narrow segment.
+
+---
+
+## 5. Overall Interpretation
+
+Taken together:
+
+- Conversion appears strong  
+- Repeat timing is slower than optimal  
+- Revenue is concentrated  
+
+This suggests:
+
+> Retention mechanics are functioning, but commercial performance appears dependent on a relatively small group of high-value customers, with slower-than-optimal repeat timing.
+
+---
+
+## 6. Risks
+
+1. **Customer concentration risk**  
+   - Heavy reliance on a small segment increases vulnerability to churn.
+
+2. **Delayed repeat behaviour**  
+   - 50-day median gap suggests missed opportunities for earlier engagement.
+
+3. **Potential over-reliance on existing customers**  
+   - Strong repeat revenue may mask weaker conversion across the broader base.
+
+4. **Data scope limitations**  
+   - Analysis reflects identifiable customers (~84% of revenue), not the full population.
+
+---
+
+## 7. Opportunities
+
+1. **Accelerate second purchase timing**  
+   - Test earlier lifecycle engagement (14–30 days).
+
+2. **Expand repeat behaviour across more customers**  
+   - Focus on converting one-time buyers.
+
+3. **Leverage high-value segment insights**  
+   - Identify behaviours of top decile customers and replicate where possible.
+
+---
+
+## 8. Recommended Next Steps
+
+1. Define CRM trigger windows based on observed timing (e.g. 14–30 days).
+2. Segment customers by repeat behaviour and value.
+3. Monitor concentration trends over time to assess dependency risk.
+4. Align analytical and finance definitions for revenue consistency.
+
+---
+
+## One-line takeaway
+
+> Repeat revenue is strong, but it appears concentrated in a small customer segment, with slower-than-optimal repeat timing — indicating both strength and risk in current retention performance.
