@@ -2,19 +2,13 @@
 
 # Commercial Retention Analysis
 
-Customer retention and repeat purchase analysis project simulating a commercial analytics workflow for a DTC nutrition e-commerce business.
+End-to-end customer retention and lifecycle analysis simulating a commercial analytics workflow for a DTC e-commerce business.
 
-This project focuses on:
+The project focuses on understanding:
 
-- customer retention analysis
-- repeat purchase behaviour
-- cohort analysis
-- customer concentration analysis
-- revenue reconciliation
-- lifecycle revenue metrics
-- commercial KPI governance
-
-The workflow is designed to reflect realistic analytics practices used across CRM, Commercial Analytics, and Finance teams.
+- how repeat purchase behaviour drives revenue,
+- whether retention is broad or concentrated,
+- and how lifecycle insights can inform CRM strategy and business decisions.
 
 ---
 
@@ -30,6 +24,28 @@ The main goals of this project are to:
 6. Produce stakeholder-ready commercial insights
 
 ---
+
+## Key Insights
+
+- ~79% of revenue is driven by repeat-order behaviour
+- ~93% of identifiable revenue comes from repeat customers
+- Second purchase conversion is ~65%, but occurs with a median delay of 50 days
+- Top 10% of customers contribute ~61% of revenue
+
+These findings suggest retention is functioning, but performance is heavily dependent on a relatively small group of high-value customers, with slower-than-optimal repeat timing.
+
+---
+
+## Business Value
+
+This analysis enables:
+
+- Identification of retention vs acquisition dependency
+- Understanding of customer concentration risk
+- Definition of CRM trigger windows for repeat engagement
+- Alignment between CRM, Commercial Analytics, and Finance KPI definitions
+
+The workflow demonstrates how analytical outputs translate into actionable business decisions.
 
 ## Tech Stack
 
@@ -104,8 +120,14 @@ Initial findings from the first data audit:
 
 ---
 
-## Notes
+## Dataset Context
 
-This project uses the UCI Online Retail dataset as a public simulation dataset for commercial analytics workflows.
+This project uses the UCI Online Retail dataset as a public simulation.
 
-The dataset does not fully represent a modern subscription-based nutrition business, so conclusions should be interpreted directionally rather than as production business truth.
+While not fully representative of a modern DTC subscription business, it is sufficient for analysing:
+
+- retention mechanics
+- repeat purchase behaviour
+- customer concentration
+
+All insights should be interpreted directionally rather than as production business metrics.
