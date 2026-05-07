@@ -2,6 +2,9 @@
 
 **Based on identifiable customers covering ~84% of analytical purchase revenue.**
 
+Context:
+~4.3K identifiable customers generated ~£8.9M in analytical purchase revenue.
+
 ---
 
 ## 1. Key Findings
@@ -20,7 +23,7 @@
 
 Interpretation:
 
-- Conversion appears strong, though the exact level should be treated with some caution given dataset structure and filtering.
+- Conversion appears relatively strong, though the exact level should be treated with some caution given dataset structure and filtering.
 - The **50-day median delay suggests a relatively slow repeat cycle**, rather than immediate replenishment behaviour.
 
 👉 **CRM opportunity:**  
@@ -51,7 +54,7 @@ Interpretation:
 
 - This is a relatively high level of concentration, though not unusual for e-commerce.
 - The risk depends on whether this revenue is spread across a broad repeat base or concentrated in a small number of very high-value customers.
-- Current evidence suggests performance is driven by a relatively narrow segment.
+- Current evidence suggests performance is driven by a relatively narrow high-value segment rather than broad-based customer contribution.
 
 ---
 
@@ -87,8 +90,8 @@ This suggests:
 
 ## 7. Opportunities
 
-1. **Accelerate second purchase timing**  
-   - Test earlier lifecycle engagement (14–30 days).
+1. **Accelerate lifecycle velocity**  
+   - Test earlier lifecycle engagement (14–30 days) to reduce the current ~50-day repeat delay.
 
 2. **Expand repeat behaviour across more customers**  
    - Focus on converting one-time buyers.
@@ -100,13 +103,14 @@ This suggests:
 
 ## 8. Recommended Next Steps
 
-1. Define CRM trigger windows based on observed timing (e.g. 14–30 days).
-2. Segment customers by repeat behaviour and value.
-3. Monitor concentration trends over time to assess dependency risk.
-4. Align analytical and finance definitions for revenue consistency.
+1. Launch a controlled MVP lifecycle acceleration test focused on second purchase timing.
+2. Define operational CRM trigger windows around the 14–30 day post-purchase period.
+3. Measure incremental uplift using exposed vs control group comparison.
+4. Monitor concentration trends to assess whether repeat behaviour broadens over time.
+5. Align analytical and finance definitions for revenue reconciliation consistency.
 
 ---
 
 ## One-line takeaway
 
-> Repeat revenue is strong, but it appears concentrated in a small customer segment, with slower-than-optimal repeat timing — indicating both strength and risk in current retention performance.
+> Repeat revenue is strong, but it appears concentrated in a relatively small high-value segment, with slower-than-optimal repeat timing — creating both lifecycle opportunity and concentration risk.
