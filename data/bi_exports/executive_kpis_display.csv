@@ -1,0 +1,11 @@
+metric,value,display_value
+analytical_lifecycle_revenue,8911407.904,£8.91M
+repeat_order_revenue_pct,0.7927939083372926,79.3%
+second_purchase_conversion_pct,0.6558321807284463,65.6%
+median_days_to_second_purchase,50.0,50 days
+top_10_revenue_share_pct,0.6137506574628907,61.4%
+identifiable_revenue_coverage_pct,0.8354430907973798,83.5%
+refund_cancellation_revenue,-896812.49,£-0.90M
+refund_rate_pct,0.08407603002607368,8.4%
+valid_customers,4338.0,"4,338"
+valid_orders,18532.0,"18,532"
