@@ -26,7 +26,7 @@ Interpretation:
 - Conversion appears relatively strong, though the exact level should be treated with some caution given dataset structure and filtering.
 - The **50-day median delay suggests a relatively slow repeat cycle**, rather than immediate replenishment behaviour.
 
-👉 **CRM opportunity:**  
+**CRM opportunity:**  
 With a 50-day median return time, there is a clear opportunity to test **earlier engagement (e.g. 14–30 days post-purchase)** to accelerate repeat behaviour.
 
 ---

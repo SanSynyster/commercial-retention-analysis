@@ -1,0 +1,6 @@
+revenue_layer,value,interpretation
+Gross Positive Purchase Revenue,10666684.544,All positive purchase revenue before refunds/cancellations
+Refund / Cancellation Revenue,-896812.49,Negative revenue from refunds and cancelled invoices
+Net Transactional Revenue,9769872.054,Gross positive revenue after refunds/cancellations
+Analytical Lifecycle Revenue,10666684.544,Gross positive revenue used for behavioural lifecycle analysis
+Identifiable Customer Revenue,8911407.904,Lifecycle revenue linked to identifiable customers
