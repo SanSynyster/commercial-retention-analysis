@@ -4,6 +4,8 @@ End-to-end customer retention, lifecycle analytics, predictive CRM prioritisatio
 
 This project uses the UCI Online Retail dataset to simulate a real commercial analytics workflow: transaction cleaning, KPI governance, retention analysis, cohort reporting, customer concentration analysis, CRM experiment design, incrementality simulation, predictive ML, and dashboard-ready customer action scoring.
 
+The default project baseline uses the one-year UCI Online Retail workbook. The repo also supports an expanded two-year Online Retail II CSV as a separate robustness test.
+
 ## Executive Takeaway
 
 Repeat behaviour is commercially powerful, but revenue is concentrated and repeat timing is slower than ideal. The best commercial opportunity is not broad discounting. It is targeted lifecycle intervention: accelerate second purchase for eligible one-time buyers, protect high-value customers at lapse risk, and validate CRM value through controlled experiments.
@@ -142,6 +144,7 @@ The project workflow is organised into seven core notebooks plus one Tableau exp
 | `05_second_purchase_propensity_model.ipynb` | First-order customer propensity to repeat within 60 days |
 | `06_lapse_risk_model.ipynb` | Rolling-snapshot 90-day lapse risk model |
 | `07_crm_priority_scoring.ipynb` | Combined customer action priority layer |
+| `08_dataset_comparison.ipynb` | Compares the one-year baseline with the expanded two-year dataset |
 | `03_tableau_exports.ipynb` | Legacy BI export layer for Tableau-ready executive dashboard CSVs |
 
 SQL parity is provided for core retention logic:
@@ -186,6 +189,7 @@ The project includes stakeholder-ready reports:
 - `reports/ml_second_purchase_propensity_summary.md`
 - `reports/ml_lapse_risk_summary.md`
 - `reports/crm_priority_strategy.md`
+- `reports/dataset_comparison_summary.md`
 - `reports/final_project_summary.md`
 
 ## Dashboarding
@@ -245,6 +249,12 @@ pip install -r requirements.txt
 data/raw/Online Retail.xlsx
 ```
 
+Optional expanded dataset for comparison:
+
+```text
+data/raw/online_retail_II.csv
+```
+
 4. Run the notebooks in this order:
 
 ```text
@@ -258,6 +268,17 @@ notebooks/07_crm_priority_scoring.ipynb
 ```
 
 5. Optional: run `notebooks/03_tableau_exports.ipynb` to regenerate tracked BI export CSVs in `data/bi_exports/`.
+
+6. Optional: run the expanded dataset comparison.
+
+```bash
+RAW_PATH="$(pwd)/data/raw/Online Retail.xlsx" PROCESSED_DIR="$(pwd)/data/processed/v1_online_retail" .venv/bin/jupyter nbconvert --execute --to notebook --output /tmp/v1_01_data_cleaning.ipynb notebooks/01_data_cleaning.ipynb
+RAW_PATH="$(pwd)/data/raw/online_retail_II.csv" PROCESSED_DIR="$(pwd)/data/processed/v2_online_retail_ii" .venv/bin/jupyter nbconvert --execute --to notebook --output /tmp/v2_01_data_cleaning.ipynb notebooks/01_data_cleaning.ipynb
+```
+
+Then run notebooks `02` through `07` again for each `PROCESSED_DIR`, followed by `notebooks/08_dataset_comparison.ipynb`.
+
+The comparison treats V2 as an expanded two-year history, not as an independent validation dataset. V2 contains the full V1 baseline plus an earlier year.
 
 Command-line execution example:
 
