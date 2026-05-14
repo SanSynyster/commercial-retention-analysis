@@ -338,11 +338,17 @@ Key columns:
 | `recency_days` | Days since latest valid purchase |
 | `is_high_value` | Top-decile value flag |
 | `lapse_risk_score` | Predicted lapse risk |
-| `risk_band` | Low, medium, or high risk |
+| `risk_band` | Low, medium, high risk, or `Unscored` |
 | `second_purchase_propensity_score` | Second-purchase propensity score |
-| `propensity_band` | Low, medium, or high propensity |
+| `propensity_band` | Low, medium, high propensity, or `Unscored` |
 | `is_second_purchase_accelerator_eligible` | Accelerator eligibility flag |
 | `recommended_crm_action` | Segment-level CRM action |
+
+Scoring note:
+
+- `Unscored` customers are outside the relevant model scoring window.
+- Missing model scores are written as `0.0` for ranking and dashboard stability only.
+- Do not interpret an unscored `0.0` value as a validated low-risk or low-propensity prediction.
 
 Dashboard use:
 

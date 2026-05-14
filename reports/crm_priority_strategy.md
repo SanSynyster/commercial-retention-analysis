@@ -25,6 +25,12 @@ Outputs:
 - `crm_customer_priority_scores.csv`
 - `crm_priority_summary.csv`
 
+Scoring note:
+
+- Some customers are outside the latest lapse-risk or second-purchase scoring windows and are labelled `Unscored`.
+- Unscored model values are set to `0.0` only for ranking mechanics; this should not be interpreted as confirmed low risk or low propensity.
+- CRM decisions for unscored customers should rely more heavily on lifecycle segment, recency, and value flags.
+
 ---
 
 ## 3. Priority Groups

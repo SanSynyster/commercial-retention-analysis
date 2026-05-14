@@ -8,6 +8,8 @@ This project uses the UCI Online Retail dataset to simulate a real commercial an
 
 Repeat behaviour is commercially powerful, but revenue is concentrated and repeat timing is slower than ideal. The best commercial opportunity is not broad discounting. It is targeted lifecycle intervention: accelerate second purchase for eligible one-time buyers, protect high-value customers at lapse risk, and validate CRM value through controlled experiments.
 
+![Executive dashboard overview](dashboards/dashboard_executive_overview.png)
+
 ## Business Questions
 
 This project answers:
@@ -129,7 +131,7 @@ Key operational insight:
 
 ## Methodology
 
-The project workflow is organised into seven notebooks:
+The project workflow is organised into seven core notebooks plus one Tableau export notebook:
 
 | Notebook | Purpose |
 | --- | --- |
@@ -140,6 +142,7 @@ The project workflow is organised into seven notebooks:
 | `05_second_purchase_propensity_model.ipynb` | First-order customer propensity to repeat within 60 days |
 | `06_lapse_risk_model.ipynb` | Rolling-snapshot 90-day lapse risk model |
 | `07_crm_priority_scoring.ipynb` | Combined customer action priority layer |
+| `03_tableau_exports.ipynb` | Legacy BI export layer for Tableau-ready executive dashboard CSVs |
 
 SQL parity is provided for core retention logic:
 
@@ -167,6 +170,10 @@ Key processed outputs include:
 - `data/processed/crm_customer_priority_scores.csv`
 - `data/processed/crm_priority_summary.csv`
 
+Note: `data/raw/` and `data/processed/` are intentionally ignored by Git. Recreate the processed outputs locally by running the notebooks after placing the raw workbook in `data/raw/`.
+
+Tracked BI export examples are available in `data/bi_exports/` for dashboard review.
+
 ## Reports
 
 The project includes stakeholder-ready reports:
@@ -187,6 +194,10 @@ Dashboard documentation:
 
 - `docs/dashboard_standards.md`
 - `docs/dashboard_data_dictionary.md`
+
+Dashboard screenshot:
+
+- `dashboards/dashboard_executive_overview.png`
 
 Recommended dashboard pages:
 
@@ -212,6 +223,49 @@ The most important dashboard story is:
 - Jupyter Notebooks
 - Tableau Public or BI dashboarding
 - Git/GitHub
+
+## How To Reproduce
+
+1. Create and activate a virtual environment.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+2. Install dependencies.
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Download the UCI Online Retail workbook and place it here:
+
+```text
+data/raw/Online Retail.xlsx
+```
+
+4. Run the notebooks in this order:
+
+```text
+notebooks/01_data_cleaning.ipynb
+notebooks/02_retention_analysis.ipynb
+notebooks/03_incrementality_simulation.ipynb
+notebooks/04_customer_segmentation.ipynb
+notebooks/05_second_purchase_propensity_model.ipynb
+notebooks/06_lapse_risk_model.ipynb
+notebooks/07_crm_priority_scoring.ipynb
+```
+
+5. Optional: run `notebooks/03_tableau_exports.ipynb` to regenerate tracked BI export CSVs in `data/bi_exports/`.
+
+Command-line execution example:
+
+```bash
+.venv/bin/jupyter nbconvert --execute --to notebook --output /tmp/01_data_cleaning_executed.ipynb notebooks/01_data_cleaning.ipynb
+```
+
+Repeat the command for each notebook in sequence, updating the input and output notebook names.
 
 ## Dataset Context
 
