@@ -145,6 +145,7 @@ The project workflow is organised into seven core notebooks plus one Tableau exp
 | `06_lapse_risk_model.ipynb` | Rolling-snapshot 90-day lapse risk model |
 | `07_crm_priority_scoring.ipynb` | Combined customer action priority layer |
 | `08_dataset_comparison.ipynb` | Compares the one-year baseline with the expanded two-year dataset |
+| `09_v2_year_over_year_comparison.ipynb` | Compares prior-year vs current-year behaviour inside the expanded dataset |
 | `03_tableau_exports.ipynb` | Legacy BI export layer for Tableau-ready executive dashboard CSVs |
 
 SQL parity is provided for core retention logic:
@@ -190,6 +191,7 @@ The project includes stakeholder-ready reports:
 - `reports/ml_lapse_risk_summary.md`
 - `reports/crm_priority_strategy.md`
 - `reports/dataset_comparison_summary.md`
+- `reports/v2_year_over_year_comparison.md`
 - `reports/final_project_summary.md`
 
 ## Dashboarding
@@ -276,9 +278,11 @@ RAW_PATH="$(pwd)/data/raw/Online Retail.xlsx" PROCESSED_DIR="$(pwd)/data/process
 RAW_PATH="$(pwd)/data/raw/online_retail_II.csv" PROCESSED_DIR="$(pwd)/data/processed/v2_online_retail_ii" .venv/bin/jupyter nbconvert --execute --to notebook --output /tmp/v2_01_data_cleaning.ipynb notebooks/01_data_cleaning.ipynb
 ```
 
-Then run notebooks `02` through `07` again for each `PROCESSED_DIR`, followed by `notebooks/08_dataset_comparison.ipynb`.
+Then run notebooks `02` through `07` again for each `PROCESSED_DIR`, followed by `notebooks/08_dataset_comparison.ipynb` and `notebooks/09_v2_year_over_year_comparison.ipynb`.
 
 The comparison treats V2 as an expanded two-year history, not as an independent validation dataset. V2 contains the full V1 baseline plus an earlier year.
+
+The year-over-year extension splits V2 into prior-year and current-year periods to test whether retention behaviour, concentration, and lifecycle timing are stable across trading years.
 
 Command-line execution example:
 
