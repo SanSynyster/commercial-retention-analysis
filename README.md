@@ -148,6 +148,32 @@ The project workflow is organised into seven core notebooks plus one Tableau exp
 | `09_v2_year_over_year_comparison.ipynb` | Compares prior-year vs current-year behaviour inside the expanded dataset |
 | `03_tableau_exports.ipynb` | Legacy BI export layer for Tableau-ready executive dashboard CSVs |
 
+Reusable source modules support the core pipeline:
+
+| Module | Purpose |
+| --- | --- |
+| `src/config.py` | Dataset paths and versioned configuration |
+| `src/data_loading.py` | Raw Excel/CSV loading and canonical column mapping |
+| `src/cleaning.py` | Transaction flags, revenue audit, clean transaction output |
+| `src/customer_metrics.py` | Customer orders, lifecycle metrics, deciles, retention cohorts |
+| `src/validation.py` | Output schema, revenue reconciliation, customer metric checks |
+| `src/run_pipeline.py` | Command-line runner for the reusable core pipeline |
+
+## Architecture
+
+The project is structured as a layered analytics application:
+
+| Layer | Role |
+| --- | --- |
+| Raw data | Source retail transaction workbooks/CSVs in `data/raw/` |
+| Cleaning layer | Canonical transaction schema, revenue flags, data quality audit |
+| Metrics layer | Customer orders, lifecycle revenue, retention cohorts, concentration outputs |
+| ML layer | Second-purchase propensity and 90-day lapse-risk prioritisation notebooks |
+| CRM priority layer | Value, lifecycle, risk, and propensity combined into customer action groups |
+| Reports/dashboard layer | Markdown reports, Tableau-ready exports, and dashboard documentation |
+
+The notebooks remain the storytelling and modelling layer. The reusable `src/` modules hold the core data loading, cleaning, metric generation, and validation logic so the project can be run as a repeatable pipeline.
+
 SQL parity is provided for core retention logic:
 
 | SQL File | Purpose |
@@ -283,6 +309,21 @@ Then run notebooks `02` through `07` again for each `PROCESSED_DIR`, followed by
 The comparison treats V2 as an expanded two-year history, not as an independent validation dataset. V2 contains the full V1 baseline plus an earlier year.
 
 The year-over-year extension splits V2 into prior-year and current-year periods to test whether retention behaviour, concentration, and lifecycle timing are stable across trading years.
+
+Reusable pipeline runner:
+
+```bash
+python -m src.run_pipeline --dataset v1
+python -m src.run_pipeline --dataset v2
+```
+
+The runner regenerates the reusable core outputs for the selected dataset: clean transactions, audit summary, customer metrics, lifecycle revenue split, revenue deciles, and retention matrix. The ML/CRM notebooks remain available for model training, scoring, and executive analysis.
+
+Run lightweight tests:
+
+```bash
+python -m unittest discover -s tests
+```
 
 Command-line execution example:
 
