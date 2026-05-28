@@ -17,6 +17,49 @@ Repeat behaviour is commercially powerful, but revenue is concentrated and repea
 
 ![Executive dashboard overview](dashboards/dashboard_executive_overview.png)
 
+## Quickstart
+
+Create a local environment and install the core analytics dependencies:
+
+```bash
+make install
+```
+
+Place the raw workbook at `data/raw/Online Retail.xlsx`, then run the reusable core pipeline:
+
+```bash
+make pipeline-v1
+```
+
+Run lightweight tests:
+
+```bash
+make test
+```
+
+Use `make install-full` if you want to recreate the fuller notebook environment. Use `make install` for the lean project runtime.
+
+## Reviewer Guide
+
+Start here if you are reviewing the project quickly:
+
+- `reports/final_project_summary.md` for the executive narrative and final recommendation.
+- `README.md` for the methodology, architecture, and reproduction steps.
+- `src/run_pipeline.py` for the reusable command-line pipeline.
+- `src/cleaning.py`, `src/customer_metrics.py`, and `src/validation.py` for the core governed analytics logic.
+- `tests/test_pipeline.py` for lightweight regression coverage.
+- `dashboards/dashboard_executive_overview.png` for the BI-facing output.
+
+Fast validation path:
+
+```bash
+make install
+make test
+make pipeline-v1
+```
+
+The notebooks remain the analysis and storytelling layer. The `src/` modules are the repeatable pipeline layer.
+
 ## Business Questions
 
 This project answers:
@@ -270,10 +313,16 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-2. Install dependencies.
+2. Install dependencies. Use the lean runtime for the reusable pipeline, or the full environment freeze for notebook work.
 
 ```bash
-pip install -r requirements.txt
+make install
+```
+
+Optional fuller notebook environment:
+
+```bash
+make install-full
 ```
 
 3. Download the UCI Online Retail workbook and place it here:
@@ -318,8 +367,8 @@ The year-over-year extension splits V2 into prior-year and current-year periods 
 Reusable pipeline runner:
 
 ```bash
-python -m src.run_pipeline --dataset v1
-python -m src.run_pipeline --dataset v2
+make pipeline-v1
+make pipeline-v2
 ```
 
 The runner regenerates the reusable core outputs for the selected dataset: clean transactions, audit summary, customer metrics, lifecycle revenue split, revenue deciles, and retention matrix. The ML/CRM notebooks remain available for model training, scoring, and executive analysis.
@@ -327,7 +376,7 @@ The runner regenerates the reusable core outputs for the selected dataset: clean
 Run lightweight tests:
 
 ```bash
-python -m unittest discover -s tests
+make test
 ```
 
 Command-line execution example:
