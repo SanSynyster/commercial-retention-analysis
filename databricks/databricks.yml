@@ -1,0 +1,26 @@
+bundle:
+  name: commercial-retention-analysis
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: Optional Unity Catalog name. Leave blank for workspace-local hive metastore schemas.
+    default: ""
+  target_schema:
+    description: Schema/database for gold retention marts.
+    default: commercial_retention_gold
+  clean_transactions_path:
+    description: Cloud path to clean_transactions parquet.
+    default: dbfs:/FileStore/commercial_retention/clean_transactions.parquet
+  write_mode:
+    description: Delta write mode for gold tables.
+    default: overwrite
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}

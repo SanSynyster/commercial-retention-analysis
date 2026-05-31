@@ -48,6 +48,42 @@ EXPECTED_OUTPUT_COLUMNS = {
     },
 }
 
+EXPECTED_LAPSE_RISK_OUTPUT_COLUMNS = {
+    "lapse_risk_model_metrics.csv": {
+        "model",
+        "train_rows",
+        "test_rows",
+        "split_snapshot",
+        "test_target_rate",
+        "roc_auc",
+        "pr_auc",
+        "precision_top_10pct",
+        "precision_top_20pct",
+        "brier_score",
+    },
+    "lapse_risk_scores.csv": {
+        "customer_id",
+        "snapshot_date",
+        "lapse_risk_score",
+        "risk_band",
+        "lapsed_next_90_days",
+        "recency_days",
+        "total_orders",
+        "revenue",
+        "is_high_value",
+        "data_split",
+    },
+    "lapse_risk_lift.csv": {
+        "risk_decile",
+        "customers",
+        "observed_lapse_rate",
+        "avg_risk_score",
+        "high_value_customers",
+        "lift_vs_test_average",
+    },
+    "lapse_risk_feature_importance.csv": {"feature", "importance", "importance_std"},
+}
+
 
 def read_output(path: Path) -> pd.DataFrame:
     if path.suffix == ".parquet":
@@ -111,6 +147,27 @@ def validate_pipeline_outputs(processed_dir: str | Path) -> None:
     validate_output_files(processed_dir)
     validate_revenue_reconciliation(processed_dir)
     validate_customer_metrics(processed_dir)
+
+
+def validate_lapse_risk_outputs(processed_dir: str | Path) -> None:
+    """Validate productionized lapse-risk model outputs exist and are usable."""
+
+    output_dir = Path(processed_dir)
+    for file_name, expected_columns in EXPECTED_LAPSE_RISK_OUTPUT_COLUMNS.items():
+        path = output_dir / file_name
+        if not path.exists():
+            raise FileNotFoundError(f"Expected lapse-risk output was not created: {path}")
+        output = read_output(path)
+        validate_expected_columns(output, expected_columns, file_name)
+
+    scores = pd.read_csv(output_dir / "lapse_risk_scores.csv")
+    if scores["lapse_risk_score"].isna().any():
+        raise ValueError("Lapse-risk scores contain missing score values.")
+    if not scores["lapse_risk_score"].between(0, 1).all():
+        raise ValueError("Lapse-risk scores must be between 0 and 1.")
+    invalid_bands = set(scores["risk_band"].dropna()) - {"Low risk", "Medium risk", "High risk"}
+    if invalid_bands:
+        raise ValueError(f"Lapse-risk scores contain invalid risk bands: {sorted(invalid_bands)}")
 
 
 def validate_v2_contains_v1(raw_v1_path: str | Path, raw_v2_path: str | Path) -> dict[str, float]:
