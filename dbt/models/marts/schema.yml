@@ -1,0 +1,173 @@
+version: 2
+
+models:
+  - name: mart_customer_metrics
+    description: Customer-level retention, revenue, repeat behavior, and recency mart.
+    columns:
+      - name: customer_id
+        description: Unique identifiable customer key.
+        tests:
+          - unique
+          - not_null
+      - name: total_orders
+        description: Count of valid customer orders.
+        tests:
+          - not_null
+      - name: revenue
+        description: Historical identifiable analytical revenue.
+        tests:
+          - not_null
+      - name: first_purchase
+        tests:
+          - not_null
+      - name: last_purchase
+        tests:
+          - not_null
+      - name: is_repeat_customer
+        tests:
+          - not_null
+
+  - name: mart_customer_segments
+    description: Customer lifecycle segmentation and CRM priority assignment mart.
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+      - name: lifecycle_segment
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['Second Purchase Accelerator', 'One-Time Lapsed', 'Repeat Lapsed', 'Repeat At Risk', 'Active Repeat', 'New Customer']
+      - name: crm_priority_group
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['P1 High-Value Lapse Prevention', 'P2 Second Purchase Acceleration', 'P3 Winback', 'P4 High-Value Nurture', 'P5 Standard Lifecycle']
+
+  - name: mart_customer_churn_clv
+    description: Churn/lapse status and CLV-style customer value features for retention prioritization.
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+      - name: historical_clv
+        tests:
+          - not_null
+      - name: churn_status
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['Active', 'At Risk', 'Lapsed']
+
+  - name: mart_retention_cohorts
+    description: Long-form monthly acquisition cohort retention mart optimized for BI tools.
+    columns:
+      - name: cohort_month
+        tests:
+          - not_null
+      - name: month_index
+        tests:
+          - not_null
+      - name: customers
+        tests:
+          - not_null
+      - name: cohort_size
+        tests:
+          - not_null
+      - name: retention_pct
+        tests:
+          - not_null
+
+  - name: mart_experiment_eligibility
+    description: Proposed second-purchase accelerator eligibility and deterministic treatment/control assignment mart.
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+      - name: proposed_assignment
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['control', 'treatment']
+      - name: is_second_purchase_experiment_eligible
+        tests:
+          - not_null
+
+  - name: mart_customer_revenue_deciles
+    description: Customer revenue concentration by decile for executive reporting.
+    columns:
+      - name: customer_decile
+        tests:
+          - unique
+          - not_null
+      - name: customers
+        tests:
+          - not_null
+      - name: revenue
+        tests:
+          - not_null
+      - name: revenue_pct
+        tests:
+          - not_null
+
+  - name: mart_second_purchase_experiment_readout
+    description: Assignment-level readout for second-purchase conversion, revenue, and time-to-purchase across 30/60/90 day windows.
+    columns:
+      - name: measurement_days
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [30, 60, 90]
+                quote: false
+      - name: experiment_assignment
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['control', 'treatment']
+      - name: eligible_customers
+        tests:
+          - not_null
+      - name: conversion_rate
+        tests:
+          - not_null
+
+  - name: mart_second_purchase_experiment_lift
+    description: Incrementality-style readout comparing treatment to control with revenue, margin, cost, and scale decision fields.
+    columns:
+      - name: measurement_days
+        tests:
+          - unique
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [30, 60, 90]
+                quote: false
+      - name: incremental_conversion_rate
+        tests:
+          - not_null
+      - name: net_incremental_value
+        tests:
+          - not_null
+      - name: decision_flag
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['Scale candidate', 'Promising but under MDE', 'Do not scale']
+
+  - name: mart_second_purchase_experiment_power
+    description: Approximate two-sample proportions power check for the proposed second-purchase experiment design.
+    columns:
+      - name: eligible_customers
+        tests:
+          - not_null
+      - name: baseline_conversion_rate
+        tests:
+          - not_null
+      - name: approximate_required_customers_per_arm
+        tests:
+          - not_null

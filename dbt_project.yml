@@ -1,0 +1,34 @@
+name: commercial_retention_analysis
+version: '1.0.0'
+config-version: 2
+
+profile: commercial_retention_analysis
+
+model-paths: ["dbt/models"]
+test-paths: ["dbt/tests"]
+macro-paths: ["dbt/macros"]
+clean-targets:
+  - "dbt/target"
+  - "dbt/dbt_packages"
+
+vars:
+  clean_transactions_path: "data/processed/v1_online_retail/clean_transactions.parquet"
+  analysis_as_of_date: "2011-12-10"
+  lapse_days: 90
+  high_value_percentile: 0.9
+  clv_lookback_days: 365
+  experiment_trigger_day: 21
+  experiment_measurement_days: 60
+  experiment_control_pct: 0.2
+  contribution_margin_pct: 0.55
+  campaign_cost_per_treated_customer: 0.15
+  minimum_detectable_effect_pp: 3.0
+
+models:
+  commercial_retention_analysis:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: view
+    marts:
+      +materialized: table

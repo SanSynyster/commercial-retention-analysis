@@ -4,6 +4,8 @@ pyarrow
 openpyxl
 scikit-learn
 duckdb
+dbt-duckdb
+pyspark
 matplotlib
 seaborn
 jupyter

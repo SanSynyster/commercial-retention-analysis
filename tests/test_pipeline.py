@@ -7,10 +7,18 @@ from pathlib import Path
 import pandas as pd
 
 from src.cleaning import build_clean_transactions, write_clean_outputs
+from src.churn_prediction import (
+    ChurnModelConfig,
+    build_lapse_snapshot_features,
+    build_order_features,
+)
 from src.config import PROJECT_ROOT
 from src.customer_metrics import build_customer_metric_outputs, write_customer_metric_outputs
 from src.data_loading import load_raw_transactions
+from src.spark_pipeline import build_spark_metric_outputs, get_spark_session
+from src.spark_pipeline import qualified_table_name
 from src.validation import (
+    validate_lapse_risk_outputs,
     validate_customer_metrics,
     validate_expected_columns,
     validate_output_files,
@@ -38,6 +46,30 @@ def sample_raw_transactions() -> pd.DataFrame:
             "UnitPrice": [10.0, 5.0, 10.0, 10.0, 0.0, 2.0],
             "CustomerID": [1, 1, 1, 1, 2, None],
             "Country": ["United Kingdom"] * 6,
+        }
+    )
+
+
+def sample_churn_transactions() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "InvoiceNo": ["100", "101", "102", "200", "201", "300", "301", "302"],
+            "StockCode": ["A"] * 8,
+            "Description": ["Alpha"] * 8,
+            "Quantity": [1] * 8,
+            "InvoiceDate": [
+                "2011-01-01",
+                "2011-02-01",
+                "2011-06-01",
+                "2011-01-15",
+                "2011-03-15",
+                "2011-01-20",
+                "2011-04-20",
+                "2011-08-20",
+            ],
+            "UnitPrice": [10.0, 12.0, 15.0, 20.0, 22.0, 8.0, 9.0, 10.0],
+            "CustomerID": [1, 1, 1, 2, 2, 3, 3, 3],
+            "Country": ["United Kingdom"] * 8,
         }
     )
 
@@ -102,6 +134,139 @@ class PipelineTests(unittest.TestCase):
 
         result = validate_v2_contains_v1(raw_v1, raw_v2)
         self.assertEqual(result["matched_pct"], 1.0)
+
+    def test_lapse_snapshots_use_only_pre_snapshot_history(self) -> None:
+        clean, _ = build_clean_transactions(sample_churn_transactions())
+        orders = build_order_features(clean)
+        snapshots = build_lapse_snapshot_features(
+            orders,
+            ChurnModelConfig(target_window_days=90, min_history_months=2),
+        )
+
+        snapshot = snapshots[
+            (snapshots["customer_id"] == 2)
+            & (snapshots["snapshot_date"] == pd.Timestamp("2011-03-01"))
+        ].iloc[0]
+
+        self.assertEqual(int(snapshot["total_orders"]), 1)
+        self.assertAlmostEqual(float(snapshot["revenue"]), 20.0)
+        self.assertEqual(int(snapshot["lapsed_next_90_days"]), 0)
+
+    def test_lapse_snapshot_marks_no_future_purchase_as_lapsed(self) -> None:
+        clean, _ = build_clean_transactions(sample_churn_transactions())
+        orders = build_order_features(clean)
+        snapshots = build_lapse_snapshot_features(
+            orders,
+            ChurnModelConfig(target_window_days=90, min_history_months=2),
+        )
+
+        snapshot = snapshots[
+            (snapshots["customer_id"] == 2)
+            & (snapshots["snapshot_date"] == pd.Timestamp("2011-04-01"))
+        ].iloc[0]
+
+        self.assertEqual(int(snapshot["total_orders"]), 2)
+        self.assertEqual(int(snapshot["lapsed_next_90_days"]), 1)
+
+    def test_lapse_risk_output_validation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_dir = Path(tmp_dir)
+            pd.DataFrame(
+                {
+                    "model": ["Test Model"],
+                    "train_rows": [10],
+                    "test_rows": [5],
+                    "split_snapshot": ["2011-06-01"],
+                    "test_target_rate": [0.4],
+                    "roc_auc": [0.7],
+                    "pr_auc": [0.6],
+                    "precision_top_10pct": [1.0],
+                    "precision_top_20pct": [0.8],
+                    "brier_score": [0.2],
+                }
+            ).to_csv(output_dir / "lapse_risk_model_metrics.csv", index=False)
+            pd.DataFrame(
+                {
+                    "customer_id": [1],
+                    "snapshot_date": ["2011-06-01"],
+                    "lapse_risk_score": [0.7],
+                    "risk_band": ["High risk"],
+                    "lapsed_next_90_days": [1],
+                    "recency_days": [45],
+                    "total_orders": [2],
+                    "revenue": [100.0],
+                    "is_high_value": [1],
+                    "data_split": ["test"],
+                }
+            ).to_csv(output_dir / "lapse_risk_scores.csv", index=False)
+            pd.DataFrame(
+                {
+                    "risk_decile": ["Top 10%"],
+                    "customers": [1],
+                    "observed_lapse_rate": [1.0],
+                    "avg_risk_score": [0.7],
+                    "high_value_customers": [1],
+                    "lift_vs_test_average": [1.0],
+                }
+            ).to_csv(output_dir / "lapse_risk_lift.csv", index=False)
+            pd.DataFrame(
+                {"feature": ["recency_days"], "importance": [0.1], "importance_std": [0.01]}
+            ).to_csv(output_dir / "lapse_risk_feature_importance.csv", index=False)
+
+            validate_lapse_risk_outputs(output_dir)
+
+    def test_spark_customer_metrics_match_sample_pipeline(self) -> None:
+        try:
+            spark = get_spark_session("commercial-retention-test")
+        except ImportError:
+            self.skipTest("PySpark is not installed.")
+        except Exception as exc:
+            if "JAVA_GATEWAY_EXITED" in str(exc) or "Java Runtime" in str(exc) or "Java runtime" in str(exc):
+                self.skipTest("A Java runtime is required to start local Spark.")
+            raise
+
+        clean, _ = build_clean_transactions(sample_raw_transactions())
+        pandas_outputs = build_customer_metric_outputs(clean)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            clean_path = Path(tmp_dir) / "clean_transactions.parquet"
+            clean.to_parquet(clean_path, index=False)
+            try:
+                spark_outputs = build_spark_metric_outputs(spark, clean_path)
+                spark_customers = spark_outputs["customer_metrics"].toPandas().sort_values("customer_id")
+            finally:
+                spark.stop()
+
+        pandas_customers = pandas_outputs["customer_metrics"].sort_values("customer_id").reset_index(drop=True)
+        spark_customers = spark_customers.reset_index(drop=True)
+        self.assertEqual(len(spark_customers), len(pandas_customers))
+        self.assertAlmostEqual(float(spark_customers["revenue"].sum()), float(pandas_customers["revenue"].sum()))
+        self.assertEqual(
+            int(spark_customers["is_repeat_customer"].sum()),
+            int(pandas_customers["is_repeat_customer"].sum()),
+        )
+
+    def test_databricks_table_name_builder(self) -> None:
+        self.assertEqual(
+            qualified_table_name("main", "commercial_retention_gold", "gold_customer_metrics"),
+            "main.commercial_retention_gold.gold_customer_metrics",
+        )
+        self.assertEqual(
+            qualified_table_name(None, "commercial_retention_gold", "gold_customer_metrics"),
+            "commercial_retention_gold.gold_customer_metrics",
+        )
+
+    def test_databricks_bundle_files_exist(self) -> None:
+        bundle_path = PROJECT_ROOT / "databricks" / "databricks.yml"
+        jobs_path = PROJECT_ROOT / "databricks" / "resources" / "jobs.yml"
+        notebook_path = PROJECT_ROOT / "databricks" / "notebooks" / "run_gold_pipeline.py"
+
+        self.assertTrue(bundle_path.exists())
+        self.assertTrue(jobs_path.exists())
+        self.assertTrue(notebook_path.exists())
+
+        jobs_config = jobs_path.read_text()
+        self.assertIn("commercial_retention_spark_gold_build", jobs_config)
+        self.assertIn("build_gold_retention_marts", jobs_config)
 
 
 if __name__ == "__main__":

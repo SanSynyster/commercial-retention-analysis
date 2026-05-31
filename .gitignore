@@ -1,6 +1,11 @@
 # Python
 .venv/
 __pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Jupyter
 .ipynb_checkpoints/
@@ -11,6 +16,14 @@ __pycache__/
 # Data
 data/raw/
 data/processed/
+data/warehouse/
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+logs/
 
 # Environment
 .env
+.env.*
+!.env.example

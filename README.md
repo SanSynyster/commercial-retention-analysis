@@ -15,7 +15,7 @@ The default project baseline uses the one-year UCI Online Retail workbook. The r
 
 Repeat behaviour is commercially powerful, but revenue is concentrated and repeat timing is slower than ideal. The best commercial opportunity is not broad discounting. It is targeted lifecycle intervention: accelerate second purchase for eligible one-time buyers, protect high-value customers at lapse risk, and validate CRM value through controlled experiments.
 
-![Executive dashboard overview](dashboards/dashboard_executive_overview.png)
+![Executive dashboard overview](dashboards/commercial-retention_&_CRM_opportunity_dashboard.jpeg)
 
 ## Quickstart
 
@@ -39,6 +39,20 @@ make test
 
 Use `make install-full` if you want to recreate the fuller notebook environment. Use `make install` for the lean project runtime.
 
+## Five-Minute Review Path
+
+| Review Goal | File Or Command |
+| --- | --- |
+| Executive story | `reports/final_project_summary.md` |
+| Skills map | `docs/portfolio_skills_matrix.md` |
+| Documentation index | `docs/index.md` |
+| dbt SQL marts | `dbt/models/marts` |
+| Experimentation | `dbt/models/marts/mart_second_purchase_experiment_lift.sql` |
+| Churn prediction | `src/churn_prediction.py` |
+| Spark and Databricks | `src/spark_pipeline.py`, `databricks/` |
+| Cloud architecture | `docs/cloud_architecture.md` |
+| Local validation | `make validate` |
+
 ## Reviewer Guide
 
 Start here if you are reviewing the project quickly:
@@ -47,6 +61,12 @@ Start here if you are reviewing the project quickly:
 - `README.md` for the methodology, architecture, and reproduction steps.
 - `src/run_pipeline.py` for the reusable command-line pipeline.
 - `src/cleaning.py`, `src/customer_metrics.py`, and `src/validation.py` for the core governed analytics logic.
+- `dbt/models/marts` for production-style SQL marts covering segmentation, cohorts, churn, CLV, and experimentation.
+- `dbt/tests` for analytics engineering reconciliation and model-quality checks.
+- `src/churn_prediction.py` and `src/run_churn_prediction.py` for productionized lapse-risk feature engineering, training, and scoring.
+- `src/spark_pipeline.py` and `src/run_spark_pipeline.py` for scalable PySpark metric generation and parity checks.
+- `databricks/` for Databricks Asset Bundle deployment scaffolding.
+- `docs/index.md` for a central documentation map.
 - `tests/test_pipeline.py` for lightweight regression coverage.
 - `dashboards/dashboard_executive_overview.png` for the BI-facing output.
 
@@ -54,8 +74,13 @@ Fast validation path:
 
 ```bash
 make install
-make test
-make pipeline-v1
+make validate
+```
+
+Optional local Spark validation requires Java:
+
+```bash
+make spark-v1
 ```
 
 The notebooks remain the analysis and storytelling layer. The `src/` modules are the repeatable pipeline layer.
@@ -215,12 +240,30 @@ The project is structured as a layered analytics application:
 | --- | --- |
 | Raw data | Source retail transaction workbooks/CSVs in `data/raw/` |
 | Cleaning layer | Canonical transaction schema, revenue flags, data quality audit |
+| dbt staging layer | Typed, snake-case transaction source over processed parquet |
+| dbt intermediate layer | Customer order facts, order ranks, and lifecycle features |
+| dbt marts layer | Segmentation, cohorts, churn status, CLV windows, experiment eligibility |
 | Metrics layer | Customer orders, lifecycle revenue, retention cohorts, concentration outputs |
 | ML layer | Second-purchase propensity and 90-day lapse-risk prioritisation notebooks |
+| ML production layer | Reusable lapse-risk feature engineering, time-based validation, scoring, and model artifact output |
+| Spark batch layer | PySpark implementation of customer metrics, revenue deciles, cohorts, and parity checks |
+| Databricks layer | Asset Bundle job and Delta table writer for gold retention marts |
 | CRM priority layer | Value, lifecycle, risk, and propensity combined into customer action groups |
 | Reports/dashboard layer | Markdown reports, Tableau-ready exports, and dashboard documentation |
 
 The notebooks remain the storytelling and modelling layer. The reusable `src/` modules hold the core data loading, cleaning, metric generation, and validation logic so the project can be run as a repeatable pipeline.
+
+The dbt layer turns the cleaned parquet output into a tested SQL analytics warehouse using DuckDB. It demonstrates production analytics engineering patterns: staging, intermediate models, marts, schema tests, and reconciliation tests.
+
+dbt marts include:
+
+- `mart_customer_metrics` for customer revenue, AOV, repeat status, recency, and second-purchase timing.
+- `mart_customer_segments` for lifecycle segmentation and CRM priority groups.
+- `mart_customer_churn_clv` for lapse status, historical CLV, and recent value windows.
+- `mart_retention_cohorts` for BI-ready long-form cohort retention.
+- `mart_experiment_eligibility` for second-purchase accelerator eligibility and deterministic treatment/control assignment.
+- `mart_second_purchase_experiment_readout`, `mart_second_purchase_experiment_lift`, and `mart_second_purchase_experiment_power` for experiment measurement, incrementality economics, and MDE checks.
+- `mart_customer_revenue_deciles` for revenue concentration.
 
 SQL parity is provided for core retention logic:
 
@@ -234,12 +277,20 @@ SQL parity is provided for core retention logic:
 
 Key processed outputs include:
 
-- `data/processed/clean_transactions.parquet`
-- `data/processed/data_audit_summary.csv`
-- `data/processed/customer_metrics.parquet`
-- `data/processed/customer_lifecycle_revenue_split.csv`
-- `data/processed/customer_revenue_deciles.csv`
-- `data/processed/retention_matrix.csv`
+- `data/processed/v1_online_retail/clean_transactions.parquet`
+- `data/processed/v1_online_retail/data_audit_summary.csv`
+- `data/processed/v1_online_retail/customer_metrics.parquet`
+- `data/processed/v1_online_retail/customer_lifecycle_revenue_split.csv`
+- `data/processed/v1_online_retail/customer_revenue_deciles.csv`
+- `data/processed/v1_online_retail/retention_matrix.csv`
+- `data/processed/v1_online_retail/lapse_risk_model_metrics.csv`
+- `data/processed/v1_online_retail/lapse_risk_scores.csv`
+- `data/processed/v1_online_retail/lapse_risk_lift.csv`
+- `data/processed/v1_online_retail/lapse_risk_feature_importance.csv`
+- `data/processed/v1_online_retail/lapse_risk_model.joblib`
+- `data/processed/v1_online_retail/spark/customer_metrics.parquet`
+- `data/processed/v1_online_retail/spark/spark_parity_summary.csv`
+- `data/warehouse/commercial_retention.duckdb`
 - `data/processed/customer_segments.csv`
 - `data/processed/customer_segment_summary.csv`
 - `data/processed/incrementality_scenarios.csv`
@@ -272,8 +323,17 @@ The project includes stakeholder-ready reports:
 
 Dashboard documentation:
 
+- `docs/index.md`
 - `docs/dashboard_standards.md`
 - `docs/dashboard_data_dictionary.md`
+- `docs/dbt_analytics_engineering.md`
+- `docs/product_analytics_experimentation.md`
+- `docs/ml_churn_prediction.md`
+- `docs/spark_pipeline.md`
+- `docs/databricks_support.md`
+- `docs/cloud_architecture.md`
+- `docs/portfolio_skills_matrix.md`
+- `docs/reviewer_guide.md`
 
 Dashboard screenshot:
 
@@ -298,8 +358,11 @@ The most important dashboard story is:
 - Python
 - pandas
 - scikit-learn
+- PySpark
+- Databricks
 - DuckDB
 - SQL
+- dbt
 - Jupyter Notebooks
 - Tableau Public or BI dashboarding
 - Git/GitHub
@@ -372,6 +435,38 @@ make pipeline-v2
 ```
 
 The runner regenerates the reusable core outputs for the selected dataset: clean transactions, audit summary, customer metrics, lifecycle revenue split, revenue deciles, and retention matrix. The ML/CRM notebooks remain available for model training, scoring, and executive analysis.
+
+Train and score the productionized lapse-risk model:
+
+```bash
+make churn-v1
+```
+
+The churn command builds rolling monthly customer snapshots, trains candidate sklearn models with a time-based split, selects the strongest CRM prioritization model, validates outputs, and writes score/lift/importance artifacts to the processed dataset directory.
+
+Run the Spark batch metric pipeline:
+
+```bash
+make spark-v1
+```
+
+The Spark command rebuilds customer metrics, revenue deciles, and long-form cohorts from the same clean transaction parquet, writes outputs under `data/processed/v1_online_retail/spark/`, and validates parity against the Pandas outputs.
+
+Databricks Asset Bundle validation, once the Databricks CLI is installed and authenticated:
+
+```bash
+make databricks-validate
+```
+
+An Azure account is only needed when you are ready to create a real Azure Databricks workspace and run the bundle in cloud infrastructure. Local development, tests, dbt, and documentation do not require Azure.
+
+Build the SQL analytics warehouse with dbt:
+
+```bash
+make dbt-build
+```
+
+The dbt project reads the processed parquet generated by `make pipeline-v1`, builds DuckDB marts in `data/warehouse/commercial_retention.duckdb`, and runs schema plus reconciliation tests.
 
 Run lightweight tests:
 

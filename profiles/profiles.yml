@@ -1,0 +1,7 @@
+commercial_retention_analysis:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: data/warehouse/commercial_retention.duckdb
+      threads: 4

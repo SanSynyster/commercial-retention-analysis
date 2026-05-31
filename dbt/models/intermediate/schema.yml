@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: int_customer_orders
+    description: Customer invoice-level order fact table built from valid transaction lines.
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+      - name: invoice_no
+        tests:
+          - not_null
+      - name: order_date
+        tests:
+          - not_null
+      - name: order_revenue
+        tests:
+          - not_null
+
+  - name: int_customer_order_features
+    description: Order fact table with lifecycle rank and next-order features.
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+      - name: invoice_no
+        tests:
+          - not_null
+      - name: order_rank
+        tests:
+          - not_null
+      - name: is_first_order
+        tests:
+          - not_null
+      - name: is_repeat_order
+        tests:
+          - not_null
+
+  - name: int_second_purchase_experiment_customers
+    description: Customer-level second-purchase accelerator experiment frame with deterministic assignment and observed future outcomes.
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+      - name: first_purchase
+        tests:
+          - not_null
+      - name: eligibility_date
+        tests:
+          - not_null
+      - name: experiment_assignment
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['control', 'treatment']
+      - name: converted_30d
+        tests:
+          - not_null
+      - name: converted_60d
+        tests:
+          - not_null
+      - name: converted_90d
+        tests:
+          - not_null

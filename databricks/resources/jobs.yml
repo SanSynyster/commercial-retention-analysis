@@ -1,0 +1,26 @@
+resources:
+  jobs:
+    commercial_retention_spark_gold_build:
+      name: commercial_retention_spark_gold_build
+      tasks:
+        - task_key: build_gold_retention_marts
+          spark_python_task:
+            python_file: ../notebooks/run_gold_pipeline.py
+            parameters:
+              - --clean-transactions-path
+              - ${var.clean_transactions_path}
+              - --target-schema
+              - ${var.target_schema}
+              - --catalog
+              - ${var.catalog}
+              - --write-mode
+              - ${var.write_mode}
+          job_cluster_key: retention_spark_cluster
+      job_clusters:
+        - job_cluster_key: retention_spark_cluster
+          new_cluster:
+            spark_version: 15.4.x-scala2.12
+            node_type_id: Standard_DS3_v2
+            num_workers: 1
+            spark_conf:
+              spark.sql.session.timeZone: UTC
