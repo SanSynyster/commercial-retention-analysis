@@ -2,13 +2,14 @@ VENV := .venv
 PYTHON := $(VENV)/bin/python
 PIP := $(PYTHON) -m pip
 
-.PHONY: help venv install install-full test validate pipeline-v1 pipeline-v2 churn-v1 churn-v2 spark-v1 spark-v2 databricks-validate dbt-debug dbt-run dbt-test dbt-build dbt-docs
+.PHONY: help venv install install-full test validate-ci validate pipeline-v1 pipeline-v2 churn-v1 churn-v2 spark-v1 spark-v2 databricks-validate dbt-debug dbt-run dbt-test dbt-build dbt-docs
 
 help:
 	@printf "Available commands:\n"
 	@printf "  make install       Create .venv and install lean runtime dependencies\n"
 	@printf "  make install-full  Create .venv and install full notebook environment\n"
 	@printf "  make test          Run lightweight unit tests\n"
+	@printf "  make validate-ci   Run CI-safe validation without raw data\n"
 	@printf "  make validate      Run local portfolio validation path\n"
 	@printf "  make pipeline-v1   Run core pipeline for one-year baseline dataset\n"
 	@printf "  make pipeline-v2   Run core pipeline for expanded two-year dataset\n"
@@ -36,6 +37,10 @@ install-full: venv
 
 test:
 	$(PYTHON) -m unittest discover -s tests
+
+validate-ci: test
+	$(PYTHON) -m src.docs_validation
+	$(PYTHON) -m src.synthetic_validation
 
 validate: test pipeline-v1 churn-v1 dbt-build
 

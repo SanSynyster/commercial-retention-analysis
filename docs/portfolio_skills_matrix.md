@@ -10,6 +10,7 @@ This matrix helps recruiters and hiring managers quickly connect the repository 
 | --- | --- | --- |
 | Advanced SQL | `sql/`, `dbt/models/intermediate`, `dbt/models/marts` | Window functions, cohorts, segmentation, CLV-style windows, retention logic |
 | dbt | `dbt_project.yml`, `dbt/models`, `dbt/tests`, `profiles/profiles.yml` | Staging/intermediate/mart layering, schema tests, singular tests, reconciliation checks |
+| Data Modeling | `docs/database_schema.md`, `dbt/models` | Model grain, customer/order relationships, BI mart design, ERD documentation |
 | Product Analytics | `mart_retention_cohorts`, `mart_customer_segments`, `mart_customer_metrics` | Lifecycle analysis, repeat behavior, cohort retention, customer concentration |
 | A/B Testing | `mart_second_purchase_experiment_*`, `docs/product_analytics_experimentation.md` | Eligibility, deterministic assignment, readout windows, lift, power, net incremental value |
 | Churn Prediction | `src/churn_prediction.py`, `src/run_churn_prediction.py`, `docs/ml_churn_prediction.md` | Rolling snapshots, leakage prevention, time-based validation, risk scoring, lift charts |
