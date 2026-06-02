@@ -46,6 +46,7 @@ Use `make install-full` if you want to recreate the fuller notebook environment.
 | Executive story | `reports/final_project_summary.md` |
 | Skills map | `docs/portfolio_skills_matrix.md` |
 | Documentation index | `docs/index.md` |
+| Database schema / ERD | `docs/database_schema.md` |
 | dbt SQL marts | `dbt/models/marts` |
 | Experimentation | `dbt/models/marts/mart_second_purchase_experiment_lift.sql` |
 | Churn prediction | `src/churn_prediction.py` |
@@ -67,6 +68,7 @@ Start here if you are reviewing the project quickly:
 - `src/spark_pipeline.py` and `src/run_spark_pipeline.py` for scalable PySpark metric generation and parity checks.
 - `databricks/` for Databricks Asset Bundle deployment scaffolding.
 - `docs/index.md` for a central documentation map.
+- `docs/database_schema.md` for the dbt warehouse ERD and model grain.
 - `tests/test_pipeline.py` for lightweight regression coverage.
 - `dashboards/dashboard_executive_overview.png` for the BI-facing output.
 
@@ -75,6 +77,12 @@ Fast validation path:
 ```bash
 make install
 make validate
+```
+
+CI-safe validation without raw data:
+
+```bash
+make validate-ci
 ```
 
 Optional local Spark validation requires Java:
@@ -173,11 +181,11 @@ Current test performance:
 
 | Metric | Value |
 | --- | ---: |
-| ROC-AUC | 0.753 |
+| ROC-AUC | 0.759 |
 | PR-AUC | 0.690 |
 | Test lapse rate | 47.3% |
 | Top 10% precision | 75.8% |
-| Top 20% precision | 73.8% |
+| Top 20% precision | 74.1% |
 | Top decile lift | 1.60x |
 
 Interpretation:
@@ -324,6 +332,7 @@ The project includes stakeholder-ready reports:
 Dashboard documentation:
 
 - `docs/index.md`
+- `docs/database_schema.md`
 - `docs/dashboard_standards.md`
 - `docs/dashboard_data_dictionary.md`
 - `docs/dbt_analytics_engineering.md`

@@ -15,8 +15,10 @@ from src.churn_prediction import (
 from src.config import PROJECT_ROOT
 from src.customer_metrics import build_customer_metric_outputs, write_customer_metric_outputs
 from src.data_loading import load_raw_transactions
+from src.docs_validation import extract_local_links, validate_markdown_links
 from src.spark_pipeline import build_spark_metric_outputs, get_spark_session
 from src.spark_pipeline import qualified_table_name
+from src.synthetic_validation import run_synthetic_validation
 from src.validation import (
     validate_lapse_risk_outputs,
     validate_customer_metrics,
@@ -267,6 +269,22 @@ class PipelineTests(unittest.TestCase):
         jobs_config = jobs_path.read_text()
         self.assertIn("commercial_retention_spark_gold_build", jobs_config)
         self.assertIn("build_gold_retention_marts", jobs_config)
+
+    def test_markdown_link_extraction_ignores_remote_links(self) -> None:
+        links = extract_local_links(
+            "[Local](docs/index.md) [Anchor](#intro) [Remote](https://example.com) ![Image](img.png)"
+        )
+        self.assertEqual(links, ["docs/index.md"])
+
+    def test_repository_markdown_links_are_valid(self) -> None:
+        failures = validate_markdown_links(PROJECT_ROOT)
+        self.assertEqual(failures, [])
+
+    def test_synthetic_end_to_end_validation(self) -> None:
+        result = run_synthetic_validation()
+        self.assertEqual(result["customers"], 3.0)
+        self.assertEqual(result["valid_order_lines"], 8.0)
+        self.assertGreater(result["snapshot_rows"], 0)
 
 
 if __name__ == "__main__":

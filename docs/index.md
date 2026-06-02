@@ -14,6 +14,7 @@
 | Document | Purpose |
 | --- | --- |
 | `dbt_analytics_engineering.md` | dbt model layers, tests, and runbook |
+| `database_schema.md` | dbt warehouse ERD, model grain, and key relationships |
 | `dashboard_data_dictionary.md` | BI-ready dataset definitions |
 | `dashboard_standards.md` | Dashboard design and formatting standards |
 

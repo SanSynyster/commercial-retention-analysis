@@ -32,6 +32,10 @@ The dbt layer turns the project from notebook-led analysis into a governed analy
 | `mart_second_purchase_experiment_power` | One row | Approximate power check for the configured MDE |
 | `mart_customer_revenue_deciles` | Customer decile | Revenue concentration and top-decile dependency |
 
+## Data Model Diagram
+
+See `docs/database_schema.md` for the Mermaid ERD, model grain, and key relationships across staging, intermediate, and mart layers.
+
 ## Runbook
 
 Create the processed source parquet first:
