@@ -113,7 +113,7 @@ flowchart LR
 
 ### Azure Account Timing
 
-You do not need Azure for local development or portfolio review.
+You do not need Azure for local development or repository review.
 
 Create an Azure account when you are ready to:
 

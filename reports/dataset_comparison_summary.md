@@ -1,9 +1,8 @@
-# Dataset Comparison Summary
-
-> **Historical exploratory V1/V2 comparison; not corrected-V2 model validation.** Model figures below have not been independently reproduced under the corrected source, taxonomy, purchase, and temporal contracts. They are not current performance claims.
+> **Historical exploratory V1/V2 model comparison — not corrected-V2 validation.** The model values below come from the earlier dataset-comparison work and have not been independently reproduced using the corrected-V2 source and eligibility contracts. They should not be interpreted as current model performance.
 
 ---
 
+# Dataset Comparison Summary
 
 ## Purpose
 

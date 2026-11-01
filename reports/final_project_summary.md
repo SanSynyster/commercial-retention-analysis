@@ -1,9 +1,8 @@
-# Final Project Summary
-
-> **Superseded historical V1 summary.** Model figures and CRM recommendations below are archival exploratory results, not current corrected-V2 conclusions, and have not been independently reproduced under corrected-V2 contracts. The lapse metric discrepancy is unresolved; no preferred result is selected.
+> **Superseded historical V1 project summary.** Performance figures and CRM recommendations below describe earlier exploratory work, have not been independently reproduced under the corrected-V2 contracts, and are not current project conclusions. The V1 lapse values also differ across historical records; no preferred value is selected here. See the current [research status](../docs/RESEARCH_STATUS.md) and corrected-V2 evidence index.
 
 ---
 
+# Final Project Summary
 
 ## Executive Summary
 

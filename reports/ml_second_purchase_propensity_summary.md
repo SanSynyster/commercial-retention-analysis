@@ -1,9 +1,8 @@
-# ML Summary: Second Purchase Propensity Model
-
-> **Historical V1 exploratory result; negative finding, not a current scoring recommendation.** The performance figures below have not been independently reproduced under corrected-V2 contracts. The research decision records this as a negative finding and retires the model from CRM scoring.
+> **Historical V1 exploratory result — negative finding, not a current scoring recommendation.** The metrics below have not been independently reproduced under the corrected-V2 contracts. The approved research decision records the V1 propensity result as a negative finding and says to retire it from CRM scoring. This report is retained only as historical analysis.
 
 ---
 
+# ML Summary: Second Purchase Propensity Model
 
 ## 1. Purpose
 

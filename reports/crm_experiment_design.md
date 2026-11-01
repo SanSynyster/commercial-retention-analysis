@@ -1,7 +1,6 @@
 # CRM Experiment Design: Second Purchase Accelerator
 
-> **Historical design proposal - not an executed experiment.** The public transaction data contains no campaign assignment or exposure records. This proposed design has not produced causal results and is not an approved operational deployment plan.
-
+> **Historical design proposal — not an executed experiment.** The public transaction data contains no campaign assignment or exposure records. This proposed design has not produced causal results and is not an approved operational deployment plan.
 
 ## 1. Executive Summary
 

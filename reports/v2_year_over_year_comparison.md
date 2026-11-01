@@ -1,7 +1,6 @@
 # V2 Year-Over-Year Comparison
 
-> **Historical output - invalidated by the V2 overlap.** These calculations included duplicated December 2010 records present in both V1 and V2. The reported row, revenue, customer and repeat-behaviour figures are inflated and must not be used as corrected-V2 results. The overlap-corrected V2 analysis supersedes this comparison. This report is retained for research provenance only.
-
+> **Historical output — invalidated by the V2 overlap.** These calculations included duplicated December 2010 records present in both V1 and V2. The reported row, revenue, customer and repeat-behaviour figures are inflated and must not be used as corrected-V2 results. The overlap-corrected V2 analysis supersedes this comparison. This report is retained for research provenance only.
 
 ## Purpose
 

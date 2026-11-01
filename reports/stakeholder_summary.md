@@ -2,7 +2,6 @@
 
 > **Historical V1 descriptive summary.** Figures below are not corrected-V2 results. Suggested campaign actions are hypotheses for future evaluation, not causal findings or approved deployment recommendations; no campaign experiment is represented here as completed.
 
-
 **Based on identifiable customers covering ~84% of analytical purchase revenue.**
 
 Context:
@@ -106,9 +105,9 @@ This suggests:
 
 ## 8. Recommended Next Steps
 
-1. Historical proposal: if separately authorized, evaluate a lifecycle acceleration campaign in a controlled test.
-2. Assess possible trigger windows only within an approved future test.
-3. Measure any future treatment effect using a valid randomized comparison.
+1. Launch a controlled MVP lifecycle acceleration test focused on second purchase timing.
+2. Define operational CRM trigger windows around the 14–30 day post-purchase period.
+3. Measure incremental uplift using exposed vs control group comparison.
 4. Monitor concentration trends to assess whether repeat behaviour broadens over time.
 5. Align analytical and finance definitions for revenue reconciliation consistency.
 
