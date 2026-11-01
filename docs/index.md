@@ -3,41 +3,38 @@
 ## Start Here
 
 | Document | Purpose |
-| --- | --- |
-| `../README.md` | Executive summary, reviewer path, reproduction commands |
-| `reviewer_guide.md` | Five-minute and twenty-minute review paths |
-| `portfolio_skills_matrix.md` | Skills-to-assets mapping for recruiters and hiring managers |
-| `cloud_architecture.md` | AWS and Azure production architecture designs |
+|---|---|
+| [`README.md`](../README.md) | Project scope, verified findings, limitations, and quick reproduction path |
+| [Research status](RESEARCH_STATUS.md) | Milestone status and pending review gates |
+| [Reproducibility](REPRODUCIBILITY.md) | Environment, test commands, and local data requirements |
+| [Data provenance](DATA_PROVENANCE.md) | Dataset source, attribution, checksums, and release-safety notes |
+| [Review guide](reviewer_guide.md) | Suggested technical reading path |
+| [Technical skills matrix](technical_skills_matrix.md) | Map from repository components to engineering methods |
+| [Database schema](database_schema.md) | dbt warehouse ERD, model grains, and relationships |
+
+## Scientific Evidence
+
+| Document | Purpose |
+|---|---|
+| [Recovery evidence index](recovery/README.md) | Chronological navigation for audits, decisions, contracts, tests, and reviews |
+| [B2B-1 integrity closure](recovery/COMMERCIAL_DS_003_STAGE_B2A_INTEGRITY_CLOSURE_HANDOVER.md) | Latest implementation correction; independent re-review pending |
+| [Purchase-occasion contract](recovery/COMMERCIAL_DS_002B_CONTRACT_SPECIFICATION.md) | Eligibility, lineage, and temporal definitions |
 
 ## Analytics Engineering
 
 | Document | Purpose |
-| --- | --- |
-| `dbt_analytics_engineering.md` | dbt model layers, tests, and runbook |
-| `database_schema.md` | dbt warehouse ERD, model grain, and key relationships |
-| `dashboard_data_dictionary.md` | BI-ready dataset definitions |
-| `dashboard_standards.md` | Dashboard design and formatting standards |
+|---|---|
+| [dbt guide](dbt_analytics_engineering.md) | Model layers, tests, and runbook |
+| [Dashboard data dictionary](dashboard_data_dictionary.md) | BI-ready dataset definitions |
+| [Dashboard standards](dashboard_standards.md) | Dashboard design and formatting guidance |
+| [Spark pipeline](spark_pipeline.md) | Optional local Spark processing and parity checks |
+| [Databricks support](databricks_support.md) | Deployment scaffolding and configuration support |
 
-## Product Analytics And ML
-
-| Document | Purpose |
-| --- | --- |
-| `product_analytics_experimentation.md` | Experiment eligibility, lift, power, and measurement design |
-| `ml_churn_prediction.md` | Productionized lapse-risk model design and outputs |
-
-## Data Engineering And Cloud
+## Product Analytics and Modeling
 
 | Document | Purpose |
-| --- | --- |
-| `spark_pipeline.md` | Local PySpark batch pipeline and parity checks |
-| `databricks_support.md` | Databricks Asset Bundle and Delta gold table support |
+|---|---|
+| [Product analytics experimentation](product_analytics_experimentation.md) | Experiment eligibility, measurement, power, and interpretation limits |
+| [Lapse-risk modeling](ml_churn_prediction.md) | Earlier model design and output references |
 
-## Business Reports
-
-| Report | Purpose |
-| --- | --- |
-| `../reports/final_project_summary.md` | Executive narrative and final recommendation |
-| `../reports/kpi_definitions.md` | Governed KPI definitions |
-| `../reports/crm_experiment_design.md` | CRM controlled experiment design |
-| `../reports/ml_lapse_risk_summary.md` | Lapse-risk model summary |
-| `../reports/crm_priority_strategy.md` | Operational CRM prioritization strategy |
+Reports and notebooks retain earlier analyses. Their outputs should be interpreted under the methodology and data scope documented alongside them; they are not automatically equivalent to corrected-V2 results.

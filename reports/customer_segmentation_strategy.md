@@ -2,7 +2,6 @@
 
 > **Historical V1 exploratory segmentation.** The reported groups and CRM actions were not validated on corrected V2 and are not a deployed or approved customer-targeting system. Treat action language as hypotheses for later research.
 
-
 ## 1. Purpose
 
 This report translates the retention analysis into operational customer lifecycle segments for CRM planning, dashboarding, and commercial prioritisation.

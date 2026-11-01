@@ -1,9 +1,8 @@
-# ML Summary: Lapse Risk Model
-
-> **Historical V1 exploratory result; not corrected-V2 evidence.** Metrics and recommendations below are retained as earlier analysis and have not been independently reproduced under the corrected-V2 contracts. Other V1 records report ROC-AUC 0.759 / PR-AUC 0.692 while this report gives 0.753 / 0.690; the discrepancy is unresolved and no value is selected. Do not treat these recommendations as current or deployed guidance.
+> **Historical V1 exploratory result — not current corrected-V2 evidence.** The metrics and recommendations below are retained as a record of earlier work; they have not been independently reproduced under the corrected-V2 taxonomy, purchase, and temporal contracts. Other historical documents report different V1 lapse values (0.759 ROC-AUC / 0.692 PR-AUC versus this report’s 0.753 / 0.690); that discrepancy is unresolved. Do not interpret the targeting recommendations below as validated or deployed guidance.
 
 ---
 
+# ML Summary: Lapse Risk Model
 
 ## 1. Purpose
 

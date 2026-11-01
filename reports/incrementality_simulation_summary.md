@@ -1,7 +1,6 @@
 # Incrementality Simulation Summary
 
-> **Historical simulation - exploratory and assumption-driven.** No randomized campaign or observed treatment/control outcomes underpin these scenarios. They are not causal evidence, a validated business case, or an approved launch or scaling recommendation. Any "scale candidate" wording below describes a hypothetical scenario under assumed inputs only.
-
+> **Historical simulation — exploratory and assumption-driven.** No randomized campaign or observed treatment/control outcomes underpin these scenarios. They are not causal evidence, a validated business case, or an approved launch or scaling recommendation. Any “scale candidate” wording below describes a hypothetical scenario under assumed inputs only.
 
 ## 1. Purpose
 
@@ -54,7 +53,7 @@ The model intentionally separates gross uplift from net incremental value. This 
 
 | Scenario | Incremental Conversion | Incremental Orders | Gross Incremental Revenue | Net Incremental Value | Break-Even Uplift | Decision |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Conservative | 1.4pp | 21.2 | GBP 9,384 | GBP 1,694 | 0.1pp | Test cautiously |
+| Conservative | 1.4pp | 21.2 | GBP 9,384 | GBP 1,694 | 0.1pp | Scenario only; not a test or launch decision |
 | Base | 4.4pp | 65.9 | GBP 29,255 | GBP 8,393 | 0.1pp | Scenario only; not a scale decision |
 | Optimistic | 7.4pp | 110.7 | GBP 49,127 | GBP 19,585 | 0.0pp | Scenario only; not a scale decision |
 
@@ -92,7 +91,7 @@ Recommended interpretation by measurement window:
 
 ---
 
-## 7. Scale Criteria
+## 7. Hypothetical Criteria for a Future Scale Decision
 
 The following are proposed criteria for a future decision after an owner-authorized randomized test; they are not current evidence or an instruction to launch:
 

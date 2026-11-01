@@ -1,4 +1,5 @@
 VENV := .venv
+VENV_PYTHON ?= python3.11
 PYTHON := $(VENV)/bin/python
 PIP := $(PYTHON) -m pip
 
@@ -10,7 +11,7 @@ help:
 	@printf "  make install-full  Create .venv and install full notebook environment\n"
 	@printf "  make test          Run lightweight unit tests\n"
 	@printf "  make validate-ci   Run CI-safe validation without raw data\n"
-	@printf "  make validate      Run local portfolio validation path\n"
+	@printf "  make validate      Run full local validation path\n"
 	@printf "  make pipeline-v1   Run core pipeline for one-year baseline dataset\n"
 	@printf "  make pipeline-v2   Run core pipeline for expanded two-year dataset\n"
 	@printf "  make churn-v1      Train and score lapse-risk model for baseline dataset\n"
@@ -25,7 +26,7 @@ help:
 	@printf "  make dbt-docs      Generate dbt documentation site artifacts\n"
 
 venv:
-	python3 -m venv $(VENV)
+	$(VENV_PYTHON) -m venv $(VENV)
 
 install: venv
 	$(PIP) install --upgrade pip

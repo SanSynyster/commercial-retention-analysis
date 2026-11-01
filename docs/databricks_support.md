@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Databricks layer packages the Spark retention mart pipeline for cloud execution while reusing the same transformation logic as the local PySpark path. It is implemented with Databricks Asset Bundles so the project shows production-style deployment rather than ad hoc notebook execution.
+The Databricks layer packages the Spark retention mart pipeline for a possible cloud execution path while reusing the local PySpark transformations. Databricks Asset Bundles define the deployment workflow; no live cloud deployment is claimed.
 
 You do not need an Azure account yet to continue local development. You need Azure when you are ready to create a real Azure Databricks workspace, configure cloud storage, authenticate the Databricks CLI, deploy the bundle, and run the job.
 
@@ -80,7 +80,7 @@ You do not need Azure for:
 - dbt DuckDB development.
 - local Spark code review.
 - unit tests.
-- documentation and portfolio review.
+- documentation and technical review.
 
 ## Validation
 

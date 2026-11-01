@@ -2,7 +2,6 @@
 
 > **Historical V1 exploratory framework.** Its segment counts and model scores are not corrected-V2 results, have not been validated as current customer scores, and should not be treated as deployment or individual-level CRM instructions.
 
-
 ## 1. Purpose
 
 This report combines lifecycle segmentation, lapse-risk modelling, and second-purchase propensity scoring into one operational CRM prioritisation framework.

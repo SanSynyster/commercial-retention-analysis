@@ -13,10 +13,14 @@ __pycache__/
 # Mac
 .DS_Store
 
+# Local editor preferences
+.vscode/
+
 # Data
-data/raw/
+/data/raw
 data/processed/
 data/warehouse/
+data/bi_exports/repeat_timing.csv
 
 # dbt
 dbt/target/

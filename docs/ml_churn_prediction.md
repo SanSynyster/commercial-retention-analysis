@@ -1,9 +1,8 @@
-# Historical Lapse-Model Implementation (Exploratory)
-
-> **Historical implementation documentation; not a production deployment or current corrected-V2 model.** The code below describes earlier exploratory work. Scores and operating recommendations have not been independently reproduced under corrected-V2 contracts.
+> **Historical implementation documentation — not a production deployment or current corrected-V2 model.** The code and runbook below describe the earlier exploratory lapse workflow. Its scores and operating recommendations have not been independently reproduced under the corrected-V2 contracts. Current research status and validated results are documented in the [README](../README.md) and [research status](RESEARCH_STATUS.md).
 
 ---
 
+# Historical Lapse-Model Implementation (Exploratory)
 
 ## Purpose
 
