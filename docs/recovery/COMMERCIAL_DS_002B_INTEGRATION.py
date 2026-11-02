@@ -16,6 +16,7 @@ FIVE_CODES={"23595","35600A","35605A","35978","84641"}
 WEAK_MERCHANDISE={"15002","20852","22126","23059","35643","35956","72038B","72732","72759","DCGS0067","DCGS0073"}
 REFERENCE_FILE=HERE/"COMMERCIAL_DS_003_STAGE_A_REFERENCE_PINS.json"
 REFERENCE_FILE_SHA256="a96d2e9d5787dc1edd0e5c493e072ede4c342e845921e3242e90742625c8ba49"
+CLASSIFIED_FRAME_COLUMNS=frozenset({"source_row_number","StockCode","InvoiceNo","Description","Country","CustomerID","Quantity","UnitPrice","InvoiceDate","category"})
 EXPECTED={
 "merchandise":(1038222,"19699671.127","-719677.94","18979993.187","16410709.747","2569283.44"),
 "shipping":(3869,"450162.53","-15567.02","434595.51","135700.87","298894.64"),
@@ -35,6 +36,37 @@ EXPECTED={
 def dec(v):
     if v is None or str(v)=="nan": return Decimal(0)
     return Decimal(str(v))
+
+def exact_integer_quantity(value, *, field="Quantity"):
+    """Return an exact integer quantity; never silently truncate source data."""
+    if isinstance(value,(str,bytes,bool)) or type(value).__name__ in {"bool_","bytes_"} or not isinstance(value,(numbers.Number,Decimal)):
+        raise ValueError(f"{field} must be an exact integer, got {value!r}")
+    try:
+        number=Decimal(str(value))
+    except (ValueError,TypeError,ArithmeticError):
+        raise ValueError(f"{field} must be an exact integer, got {value!r}") from None
+    if not number.is_finite() or number!=number.to_integral_value():
+        raise ValueError(f"{field} must be an exact integer, got {value!r}")
+    return int(number)
+
+def _load_reference_pins(path, expected_sha256):
+    """Hash and parse one immutable byte buffer for a frozen JSON reference."""
+    reference_bytes=path.read_bytes()
+    actual=hashlib.sha256(reference_bytes).hexdigest()
+    if actual!=expected_sha256:
+        raise AssertionError(f"reference pin file SHA-256 mismatch: {actual}")
+    return json.loads(reference_bytes)
+
+def _validate_classified_frame_schema(frame):
+    """Require exactly the approved source-plus-category columns, in any order."""
+    columns=list(frame.columns)
+    if len(columns)!=len(set(columns)):
+        raise AssertionError("validated frame contains duplicated column labels")
+    actual_columns=set(columns)
+    missing=CLASSIFIED_FRAME_COLUMNS-actual_columns
+    unexpected=actual_columns-CLASSIFIED_FRAME_COLUMNS
+    if missing or unexpected:
+        raise AssertionError(f"validated frame schema mismatch: missing={sorted(missing)}, unexpected={sorted(unexpected)}")
 
 def _stable_hash(records):
     h=hashlib.sha256()
@@ -70,19 +102,14 @@ def validate_actual_classified_frame(frame):
     by callers. The V2 source digest is an external constant in the frozen
     Stage A pin file; the row content and assignments are reconstructed here.
     """
-    actual_pin_sha=audit.sha256(REFERENCE_FILE)
-    if actual_pin_sha!=REFERENCE_FILE_SHA256:
-        raise AssertionError(f"reference pin file SHA-256 mismatch: {actual_pin_sha}")
-    pins=json.loads(REFERENCE_FILE.read_text(encoding="utf-8"))
+    pins=_load_reference_pins(REFERENCE_FILE,REFERENCE_FILE_SHA256)
     if audit.sha256(audit.V1_PATH)!=pins["source_v1_sha256"] or audit.sha256(audit.V2_PATH)!=pins["source_v2_sha256"]:
         raise AssertionError("raw source bytes differ from frozen Stage A references")
     if audit.sha256(HERE/"COMMERCIAL_DS_002B_TAXONOMY_SEED.csv")!=pins["seed_sha256"]:
         raise AssertionError("authoritative taxonomy seed differs from frozen Stage A reference")
     if len(frame)!=EXPECTED_ROWS:
         raise AssertionError(f"source row count mismatch: {len(frame)}")
-    required={"source_row_number","StockCode","InvoiceNo","Description","Country","CustomerID","Quantity","UnitPrice","InvoiceDate","category"}
-    missing=required-set(frame.columns)
-    if missing: raise AssertionError(f"validated frame missing integrity fields: {sorted(missing)}")
+    _validate_classified_frame_schema(frame)
     rows=[]
     for row in frame.itertuples(index=False):
         source_id=row.source_row_number
@@ -97,11 +124,19 @@ def validate_actual_classified_frame(frame):
                 raise AssertionError(f"invalid source customer identifier at row {source_id}")
             customer_id=str(int(value))
         if _is_null(row.InvoiceDate): raise AssertionError(f"missing source date at row {source_id}")
+        try: quantity=exact_integer_quantity(row.Quantity,field=f"Quantity at row {source_id}")
+        except ValueError as exc: raise AssertionError(str(exc)) from None
+        if isinstance(row.UnitPrice,(str,bytes,bool)) or type(row.UnitPrice).__name__ in {"bool_","bytes_"} or not isinstance(row.UnitPrice,(numbers.Number,Decimal)):
+            raise AssertionError(f"UnitPrice at row {source_id} must be numeric")
+        try: unit_price=Decimal(str(row.UnitPrice))
+        except (ValueError,TypeError,ArithmeticError):
+            raise AssertionError(f"UnitPrice at row {source_id} must be numeric") from None
+        if not unit_price.is_finite(): raise AssertionError(f"UnitPrice at row {source_id} must be finite")
         rows.append({"source_sha256":pins["source_v2_sha256"],"source_row_number":source_id,
             "raw_stock_code":str(row.StockCode),"stock_code":normalize_code(row.StockCode),
             "invoice":str(row.InvoiceNo),"description":None if _is_null(row.Description) else str(row.Description),
             "country":None if _is_null(row.Country) else str(row.Country),"customer_missing":customer_missing,
-            "customer_id":customer_id,"quantity":int(row.Quantity),"unit_price":str(Decimal(str(row.UnitPrice))),
+            "customer_id":customer_id,"quantity":quantity,"unit_price":str(unit_price),
             "date":row.InvoiceDate.isoformat(),"category":str(row.category)})
     fingerprints,_=integrity_fingerprints(rows,EXPECTED_ROWS)
     expected={"row":pins["row_fingerprint"],"legacy_row":pins["legacy_row_fingerprint"],
@@ -180,7 +215,8 @@ def _calculate_report(seed_path=None, include_classified=False):
         d["negative_amount"]=str(Decimal(d.get("negative_amount","0"))+negative)
         source_row=int(row.source_row_number)
         customer_id=None if not identified else str(int(row.CustomerID))
-        row_records.append({"source_sha256":integrity["v2"],"source_row_number":source_row,"raw_stock_code":str(row.StockCode),"stock_code":normalize_code(row.StockCode),"invoice":str(row.InvoiceNo),"description":None if _is_null(row.Description) else str(row.Description),"country":None if _is_null(row.Country) else str(row.Country),"customer_missing":customer_id is None,"customer_id":customer_id,"quantity":int(row.Quantity),"unit_price":str(dec(row.UnitPrice)),"date":row.InvoiceDate.isoformat(),"category":cat})
+        quantity=exact_integer_quantity(row.Quantity,field=f"Quantity at row {source_row}")
+        row_records.append({"source_sha256":integrity["v2"],"source_row_number":source_row,"raw_stock_code":str(row.StockCode),"stock_code":normalize_code(row.StockCode),"invoice":str(row.InvoiceNo),"description":None if _is_null(row.Description) else str(row.Description),"country":None if _is_null(row.Country) else str(row.Country),"customer_missing":customer_id is None,"customer_id":customer_id,"quantity":quantity,"unit_price":str(dec(row.UnitPrice)),"date":row.InvoiceDate.isoformat(),"category":cat})
         if code=="M":
             group="embedded" if str(row.InvoiceNo) in merch_invoices else "standalone"
             sign="positive" if amount>0 else "negative" if amount<0 else "zero"
@@ -238,9 +274,7 @@ def _calculate_report(seed_path=None, include_classified=False):
     return (report,classified_frame) if include_classified else report
 
 def validate_reference_pins(report):
-    actual_file_hash=audit.sha256(REFERENCE_FILE)
-    if actual_file_hash!=REFERENCE_FILE_SHA256: raise AssertionError(f"reference pin file SHA-256 mismatch: {actual_file_hash}")
-    pins=json.loads(REFERENCE_FILE.read_text(encoding="utf-8"))
+    pins=_load_reference_pins(REFERENCE_FILE,REFERENCE_FILE_SHA256)
     pairs={"source_v1_sha256":report["source_sha256"]["v1"],"source_v2_sha256":report["source_sha256"]["v2"],
            "seed_sha256":report["seed_sha256"],"row_fingerprint":report["row_identity"]["sha256"],
            "legacy_row_fingerprint":report["row_identity"]["legacy_sha256"],"source_content_fingerprint":report["source_content_integrity"]["sha256"],

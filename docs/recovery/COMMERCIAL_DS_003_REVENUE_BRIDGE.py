@@ -17,6 +17,7 @@ from COMMERCIAL_DS_003_PURCHASE_OCCASIONS import (
     _validate_purchase_input, _build_trusted_purchase_occasions,
     canonical_customer_id, load_validated_purchase_input,
 )
+from COMMERCIAL_DS_002B_INTEGRATION import _load_reference_pins
 from COMMERCIAL_DS_002B_TAXONOMY import normalize_code
 
 EXPECTED_SOURCE_ROWS=1_044_848
@@ -46,10 +47,7 @@ def _membership_fingerprint(source_ids):
 
 
 def _validate_bridge_against_frozen_references(leaves, source_reconciliation):
-    actual_file_hash=hashlib.sha256(BRIDGE_REFERENCE_FILE.read_bytes()).hexdigest()
-    if actual_file_hash!=BRIDGE_REFERENCE_FILE_SHA256:
-        raise AssertionError(f"bridge reference pin file SHA-256 mismatch: {actual_file_hash}")
-    pins=json.loads(BRIDGE_REFERENCE_FILE.read_text(encoding="utf-8"))
+    pins=_load_reference_pins(BRIDGE_REFERENCE_FILE,BRIDGE_REFERENCE_FILE_SHA256)
     if set(leaves)!=set(pins["categories"]):
         raise AssertionError("bridge category set differs from frozen references")
     for name,reference in pins["categories"].items():

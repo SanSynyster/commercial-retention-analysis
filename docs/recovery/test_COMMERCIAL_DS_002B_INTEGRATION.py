@@ -3,7 +3,7 @@ import tempfile,csv
 from decimal import Decimal
 from pathlib import Path
 import numpy as np, pandas as pd
-from COMMERCIAL_DS_002B_INTEGRATION import build_report, EXPECTED_ROWS, EXPECTED, assert_integrity, row_customer_fingerprints, integrity_fingerprints, validate_reference_pins
+from COMMERCIAL_DS_002B_INTEGRATION import build_report, EXPECTED_ROWS, EXPECTED, assert_integrity, row_customer_fingerprints, integrity_fingerprints, validate_reference_pins, exact_integer_quantity, _load_reference_pins, REFERENCE_FILE, REFERENCE_FILE_SHA256
 from COMMERCIAL_DS_002B_TAXONOMY import classify, load_seed, INVENTORY_CONTEXT_CODES, SEED, SEED_SHA256, sha256, validate_seed
 import COMMERCIAL_DS_002_ANALYSIS as audit
 
@@ -37,6 +37,20 @@ class CorrectedV2IntegrationTests(unittest.TestCase):
         self.assertEqual(r['source_content_integrity']['sha256'],'59970949b45bf75263217525fa9f437c672d39503c7b2c605275601546299c6d')
         self.assertEqual(r['customer_integrity']['sha256'],'248f421fbcacfaf1e63b3a5a69da78ec3097ce0cfa73c50f1e6ed733e4736d51')
         self.assertEqual(r['customer_integrity']['identified_signed_amount'],'16343669.038')
+
+    def test_exact_integer_quantity_record_conversion(self):
+        for valid,expected in ((1,1),(np.int64(2),2),(3.0,3),(Decimal('4.000'),4)):
+            self.assertEqual(exact_integer_quantity(valid),expected)
+        for invalid in (1.4, Decimal('2.01'), True, np.bool_(True), float('nan'), float('inf'), None, 'not-a-number', '5', ' 5 ', '1e2', b'5'):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(ValueError,'exact integer'):
+                exact_integer_quantity(invalid)
+
+    def test_reference_pins_are_parsed_from_verified_bytes(self):
+        class ByteOnlyPath:
+            def read_bytes(self): return REFERENCE_FILE.read_bytes()
+            def read_text(self,*args,**kwargs): raise AssertionError('unverified second read')
+        pins=_load_reference_pins(ByteOnlyPath(),REFERENCE_FILE_SHA256)
+        self.assertEqual(pins['corrected_v2_rows'],EXPECTED_ROWS)
 
     def test_no_unclassified_rows(self):
         self.assertEqual(self.report['unclassified_rows'],0)

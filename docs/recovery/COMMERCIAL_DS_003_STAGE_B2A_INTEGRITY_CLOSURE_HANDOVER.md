@@ -121,3 +121,9 @@ The Stage A classification/source row fingerprint remains `d76696efc5d02069d1180
 ## Remaining conditions
 
 No B2B analysis has started. Claude should focus re-review on the actual-frame fingerprint reconstruction, the immutable pin comparison, the 16 bridge leaf memberships and totals, and the forged-wrapper adversarial tests. The source parser remains dependent on the pinned pandas/CSV behavior documented by Stage A; this correction does not change that limitation.
+
+## Integrity safeguard scope (B2B2-IMPLEMENTATION-001)
+
+The supported production gate checks the actual classified frame against the frozen Stage A source, taxonomy, row, source-content, customer and category references before downstream consumers proceed. Occasion and bridge producers also compare their results with their separately frozen references. Pin files are SHA-256 checked against constants and parsed from the same in-memory byte buffer that was hashed. The frame contract is closed to exactly ten columns: `source_row_number`, `StockCode`, `InvoiceNo`, `Description`, `Country`, `CustomerID`, `Quantity`, `UnitPrice`, `InvoiceDate`, and `category`. Missing, duplicate, unexpected, malformed, fractional-quantity, or fingerprint-inconsistent values fail closed.
+
+These are research-pipeline safeguards against accidental drift and in-process wrapper misuse. They are not security controls against a person able to edit repository code or both a pin and its co-located expected hash. Python private names and local filesystem assumptions are not security boundaries. The parser still depends on the pinned pandas `read_csv` behavior. Any legitimate source, schema, taxonomy, or scientific change requires explicit review and a separately approved reference/version change; normal runs never rewrite pins.

@@ -23,7 +23,8 @@ import pandas as pd
 HERE=Path(__file__).resolve().parent
 sys.path.insert(0,str(HERE))
 from COMMERCIAL_DS_002B_INTEGRATION import (build_report_and_classified_rows,
-    validate_reference_pins, validate_actual_classified_frame)
+    validate_reference_pins, validate_actual_classified_frame,
+    _load_reference_pins)
 from COMMERCIAL_DS_002B_TAXONOMY import SEED_SHA256
 
 OBSERVATION_START=date(2009,12,1)
@@ -260,10 +261,7 @@ def _occasion_fingerprints(occasions):
 
 
 def _validate_occasions_against_frozen_reference(occasions,summary,integrity_report):
-    actual_pin_hash=hashlib.sha256(OCCASION_REFERENCE_FILE.read_bytes()).hexdigest()
-    if actual_pin_hash!=OCCASION_REFERENCE_FILE_SHA256:
-        raise AssertionError(f"occasion reference pin file SHA-256 mismatch: {actual_pin_hash}")
-    pins=json.loads(OCCASION_REFERENCE_FILE.read_text(encoding="utf-8"))
+    pins=_load_reference_pins(OCCASION_REFERENCE_FILE,OCCASION_REFERENCE_FILE_SHA256)
     if pins["source_v2_sha256"]!=integrity_report["source_sha256"]["v2"]: raise AssertionError("occasion source reference mismatch")
     if pins["seed_sha256"]!=integrity_report["seed_sha256"]: raise AssertionError("occasion taxonomy reference mismatch")
     if pins["source_row_fingerprint"]!=integrity_report["row_identity"]["sha256"]: raise AssertionError("occasion source-row reference mismatch")

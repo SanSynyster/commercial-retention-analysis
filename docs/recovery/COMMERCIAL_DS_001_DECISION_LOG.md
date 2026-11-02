@@ -4,7 +4,7 @@ Part of the [recovery index](README.md). This file is the **source of truth for 
 
 ## 1. Confirmed decisions
 
-Recorded from the COMMERCIAL-DS-001 brief issued by the project owner on 2026-10-30.
+CD-01 through CD-10 were recorded from the COMMERCIAL-DS-001 brief issued by the project owner on 2026-10-30. B2B2-C1 below is a later owner approval dated 2026-11-01, recorded from the COMMERCIAL-DS-B2B2-IMPLEMENTATION-001 instruction.
 
 **Editorial note (2026-11-01):** The original owner-confirmed CD-01 wording used a term excluded from current public-facing project materials. This log renders that terminology as “research programme.” The approved multi-study structure and project title are unchanged; this editorial wording does not alter the decision.
 
@@ -20,6 +20,7 @@ Recorded from the COMMERCIAL-DS-001 brief issued by the project owner on 2026-10
 | CD-08 | Tools are retained only with a documented purpose, a verification strategy and a research link | Owner brief §2 |
 | CD-09 | Phase 1 is documentation-only: no code, data, model, README or dependency changes; no commits | Owner brief §11 |
 | CD-10 | Later phases are never authorised automatically | Owner brief §8 |
+| **B2B2-C1** | **For B2B-2 observed-repeat reporting, do not publish a pooled 90-day repeat-rate headline. Separate left-censored customers from first-observed-on/after-cutoff populations; stratify by first-observed month or quarter; report eligibility, maturity, numerator and denominator explicitly; describe observed repeat behavior without claiming acquisition retention; identify insufficient follow-up; do not infer true acquisition dates. Keep all three acquisition-proxy definitions as diagnostic sensitivities, select no primary, do not call post-cutoff customers proven new, and make no acquisition-cohort retention claims.** | Owner approval, 2026-11-01, COMMERCIAL-DS-B2B2-IMPLEMENTATION-001 instruction |
 
 ## 2. Proposed decisions (require owner approval)
 

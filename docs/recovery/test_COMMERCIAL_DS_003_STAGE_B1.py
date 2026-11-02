@@ -12,6 +12,7 @@ import pandas as pd
 
 import COMMERCIAL_DS_003_PURCHASE_OCCASIONS as purchase_module
 import COMMERCIAL_DS_003_REVENUE_BRIDGE as bridge_module
+import COMMERCIAL_DS_002B_INTEGRATION as integration_module
 from COMMERCIAL_DS_003_PURCHASE_OCCASIONS import (
     ACQUISITION_CUTOFF, DATA_END_DATE, PRIMARY_REPEAT_DAYS,
     _build_purchase_occasions_for_test, build_purchase_occasions, build_real_data_report,
@@ -245,6 +246,87 @@ class RealCorrectedV2OccasionTests(unittest.TestCase):
             _integrity_report=dict(self.validated._integrity_report),_token=purchase_module._VALIDATION_TOKEN)
         with self.assertRaisesRegex(AssertionError,"actual classified frame row fingerprint mismatch"):
             build_revenue_bridge(forged)
+
+    def test_actual_frame_mutations_fail_closed_at_shared_production_gate(self):
+        base=self.validated._frame
+        zero_price=base.index[(base.Quantity>0)&(base.UnitPrice==0)][0]
+        qualifying=base.index[(base.category=="merchandise")&(base.Quantity>0)&(base.UnitPrice>0)][0]
+        merchandise=base.index[base.category=="merchandise"][0]
+        shipping=base.index[base.category=="shipping"][0]
+        mutations=[]
+
+        changed=base.copy(deep=True);changed.loc[merchandise,"CustomerID"]=99999999;mutations.append(("customer reassignment",changed))
+        changed=base.copy(deep=True);changed.loc[merchandise,"CustomerID"]=np.nan;mutations.append(("de-attribution",changed))
+        changed=base.copy(deep=True);changed.loc[merchandise,"Country"]="ZZ";mutations.append(("country",changed))
+        changed=base.copy(deep=True);changed.loc[merchandise,"InvoiceDate"]+=pd.Timedelta(days=1);mutations.append(("date",changed))
+        changed=base.copy(deep=True);changed.loc[merchandise,"Description"]="mutated description";mutations.append(("description",changed))
+        changed=base.iloc[:-1].copy(deep=True);mutations.append(("deletion",changed))
+        changed=base.copy(deep=True);changed.iloc[-1]=changed.iloc[0].to_numpy();mutations.append(("duplicate substitution",changed))
+        changed=base.copy(deep=True);changed.loc[merchandise,"category"]="shipping";changed.loc[shipping,"category"]="merchandise";mutations.append(("category swap",changed))
+        changed=base.copy(deep=True);changed["Quantity"]=changed["Quantity"].astype("float64");changed.loc[zero_price,"Quantity"]+=0.4;mutations.append(("fractional zero-price quantity",changed))
+        changed=base.copy(deep=True);changed["Quantity"]=changed["Quantity"].astype("float64");changed.loc[qualifying,"Quantity"]+=0.4;mutations.append(("fractional qualifying quantity",changed))
+
+        for label,index,value,column,message in (
+            ("shipping string quantity",shipping,"5","Quantity",r"Quantity at row .* must be an exact integer"),
+            ("qualifying string quantity",qualifying,"5","Quantity",r"Quantity at row .* must be an exact integer"),
+            ("shipping string price",shipping,"0","UnitPrice",r"UnitPrice at row .* must be numeric"),
+            ("qualifying string price",qualifying,"1.0","UnitPrice",r"UnitPrice at row .* must be numeric"),
+            ("shipping bytes price",shipping,b"0","UnitPrice",r"UnitPrice at row .* must be numeric"),
+            ("qualifying bytes price",qualifying,b"1.0","UnitPrice",r"UnitPrice at row .* must be numeric"),
+        ):
+            changed=base.copy(deep=True);changed[column]=changed[column].astype(object);changed.loc[index,column]=value
+            mutations.append((label,changed,message))
+
+        expected_messages={
+            "customer reassignment":"actual classified frame row fingerprint mismatch",
+            "de-attribution":"actual classified frame row fingerprint mismatch",
+            "country":"actual classified frame row fingerprint mismatch",
+            "date":"actual classified frame row fingerprint mismatch",
+            "description":"actual classified frame source_content fingerprint mismatch",
+            "deletion":"source row count mismatch",
+            "duplicate substitution":"duplicate source row",
+            "category swap":"actual classified frame row fingerprint mismatch",
+            "fractional zero-price quantity":r"Quantity at row .* must be an exact integer",
+            "fractional qualifying quantity":r"Quantity at row .* must be an exact integer",
+        }
+        for mutation in mutations:
+            label,changed=mutation[:2]
+            message=mutation[2] if len(mutation)==3 else expected_messages[label]
+            forged=replace(self.validated,_frame=changed,
+                _content_digest=purchase_module._frame_content_digest(changed),
+                _integrity_report=dict(self.validated._integrity_report),
+                _token=purchase_module._VALIDATION_TOKEN)
+            exception_type=ValueError if label=="duplicate substitution" else AssertionError
+            if label=="duplicate substitution": message="duplicate source row identity"
+            with self.subTest(mutation=label), self.assertRaisesRegex(exception_type,message):
+                purchase_module._validate_purchase_input(forged)
+
+    def test_exact_closed_schema_rejects_missing_duplicate_and_extra_columns(self):
+        base=self.validated._frame
+        integration_module._validate_classified_frame_schema(base[list(reversed(base.columns))])
+        for label,changed in (
+            ("missing",base.drop(columns=["Country"])),
+            ("extra",base.assign(unvalidated_amount=0)),
+            ("duplicate",pd.concat([base,base[["Country"]]],axis=1)),
+        ):
+            with self.subTest(schema=label), self.assertRaises(AssertionError):
+                integration_module.validate_actual_classified_frame(changed)
+
+    def test_all_supported_consumers_call_the_shared_integrity_gate(self):
+        sentinel=RuntimeError("integrity gate sentinel")
+        for label,consumer in (
+            ("occasions",lambda:purchase_module.build_purchase_occasions(self.validated)),
+            ("report",lambda:purchase_module.build_real_data_report(self.validated)),
+        ):
+            with self.subTest(consumer=label), patch.object(purchase_module,"_validate_purchase_input",side_effect=sentinel):
+                with self.assertRaisesRegex(RuntimeError,"integrity gate sentinel"): consumer()
+        with patch.object(bridge_module,"_validate_purchase_input",side_effect=sentinel):
+            with self.assertRaisesRegex(RuntimeError,"integrity gate sentinel"):
+                bridge_module.build_revenue_bridge(self.validated)
+        with patch.object(bridge_module,"load_validated_purchase_input",return_value=self.validated), \
+             patch.object(bridge_module,"_validate_purchase_input",side_effect=sentinel):
+            with self.assertRaisesRegex(RuntimeError,"integrity gate sentinel"):
+                bridge_module.build_real_data_bridge()
 
     def test_frozen_leaf_refs_reject_category_swaps_and_membership_changes(self):
         leaves={name:dict(item) for name,item in self.bridge["bridge_leaves"].items()}
