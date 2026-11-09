@@ -49,6 +49,7 @@ class ExperimentConfig:
     effect_180_eligible: float = 0.01
     margin_noise_sd: float = 8.0
     margin_missing_rate: float = 0.0
+    margin_resolution_follows_outcome: bool = False
     same_day_ambiguous_rate: float = 0.0
     p_first_order_status_error: float = 0.0
     p_first_order_later_cancelled: float = 0.0
@@ -84,6 +85,8 @@ class ExperimentConfig:
             raise ValueError("180-day repeat probabilities must contain the 90-day probabilities")
         if self.outcome_missingness not in {"complete", "balanced_random", "differential", "outcome_dependent"}:
             raise ValueError("Unknown outcome_missingness scenario")
+        if self.outcome_missingness == "outcome_dependent" and not self.margin_resolution_follows_outcome:
+            raise ValueError("Outcome-dependent missingness requires margin_resolution_follows_outcome=True to prevent financial leakage")
         if self.margin_noise_sd < 0 or self.contribution_per_repeat < 0 or self.intervention_cost_per_sent < 0:
             raise ValueError("Margin and cost inputs must be non-negative")
 
@@ -126,6 +129,14 @@ class SimulatorTruth:
     potential_treatment_90: np.ndarray
     realized_outcome_90: np.ndarray
     resolution_mask: np.ndarray
+    margin_90_truth: np.ndarray
+    margin_180_truth: np.ndarray
+    margin_capture_90: np.ndarray
+    margin_capture_180: np.ndarray
+    potential_margin_control_90: np.ndarray
+    potential_margin_treatment_90: np.ndarray
+    population_itt_margin_90: float
+    finite_population_sate_margin_90: float
 
 
 @dataclass(frozen=True)
@@ -142,6 +153,12 @@ def _thresholds(probabilities: np.ndarray) -> np.ndarray:
     return np.fromiter((_NORMAL.inv_cdf(float(np.clip(p, eps, 1 - eps))) for p in probabilities), dtype=float, count=len(probabilities))
 
 
+def _clone_seed_sequence(seed_sequence: np.random.SeedSequence) -> np.random.SeedSequence:
+    """Create a reusable immutable specification, ignoring a caller's spawn counter."""
+    return np.random.SeedSequence(seed_sequence.entropy, spawn_key=seed_sequence.spawn_key,
+                                  pool_size=seed_sequence.pool_size)
+
+
 def generate_trial(
     config: ExperimentConfig,
     *,
@@ -149,7 +166,7 @@ def generate_trial(
 ) -> SyntheticTrial:
     """Generate artificial analyst records and a separate private truth object."""
     config.validate()
-    root = seed_sequence if seed_sequence is not None else np.random.SeedSequence(config.seed)
+    root = _clone_seed_sequence(seed_sequence) if seed_sequence is not None else np.random.SeedSequence(config.seed)
     streams = root.spawn(9)
     rng_assignment, rng_eligibility, rng_outcome, rng_delivery, rng_guardrail, rng_resolution, rng_admin, rng_margin = [np.random.default_rng(s) for s in streams[:8]]
     n = config.n_customers
@@ -216,8 +233,15 @@ def generate_trial(
     intervention_cost = sent.astype(float) * config.intervention_cost_per_sent
     margin90 = outcome * config.contribution_per_repeat - intervention_cost + margin_noise
     margin180 = repeat180 * config.contribution_per_repeat - intervention_cost + margin_noise
-    margin_resolved90 = rng_margin.random(n) >= config.margin_missing_rate
-    margin_resolved180 = rng_margin.random(n) >= config.margin_missing_rate
+    margin90_control = potential_c.astype(float) * config.contribution_per_repeat + margin_noise
+    margin90_treatment = potential_t.astype(float) * config.contribution_per_repeat - eligible.astype(float) * config.intervention_cost_per_sent + margin_noise
+    margin_capture90 = rng_margin.random(n) >= config.margin_missing_rate
+    margin_capture180 = rng_margin.random(n) >= config.margin_missing_rate
+    # Apply one common purchase-resolution policy to both arms. When enabled,
+    # purchase-linked financial outcomes remain unavailable if the 90-day
+    # purchase outcome is unresolved; simulator-private truth is retained below.
+    margin_resolved90 = margin_capture90 & (resolved if config.margin_resolution_follows_outcome else True)
+    margin_resolved180 = margin_capture180 & (resolved if config.margin_resolution_follows_outcome else True)
 
     records = pd.DataFrame({
         "customer_id": customer_id,
@@ -252,6 +276,14 @@ def generate_trial(
         potential_treatment_90=potential_t,
         realized_outcome_90=outcome,
         resolution_mask=resolved,
+        margin_90_truth=margin90,
+        margin_180_truth=margin180,
+        margin_capture_90=margin_capture90,
+        margin_capture_180=margin_capture180,
+        potential_margin_control_90=margin90_control,
+        potential_margin_treatment_90=margin90_treatment,
+        population_itt_margin_90=float(pi_population * (config.eligible_effect * config.contribution_per_repeat - config.intervention_cost_per_sent)),
+        finite_population_sate_margin_90=float(np.mean(margin90_treatment - margin90_control)),
     )
     return SyntheticTrial(records=records, truth=truth, bootstrap_seed_sequence=streams[8], replicate_seed_sequence=root)
 
@@ -306,6 +338,13 @@ def analyze_trial(
         raise ValueError("Invalid assignment value")
     if frame.ascertainment_rule.nunique() != 1:
         raise ValueError("Outcome ascertainment rule must be identical across randomized arms")
+    if frame.assignment.nunique() != 2:
+        raise ValueError("Both randomized arms must be represented")
+    for value_col, resolved_col in (("outcome_90", "resolved_90"), ("margin_90", "margin_resolved_90"), ("margin_180", "margin_resolved_180")):
+        observed_mask = frame[value_col].notna().to_numpy()
+        status_mask = frame[resolved_col].astype(bool).to_numpy()
+        if not np.array_equal(observed_mask, status_mask):
+            raise ValueError(f"{value_col} values must agree with {resolved_col}")
     if margin_bootstrap_reps < 1:
         raise ValueError("margin_bootstrap_reps must be positive")
 
@@ -324,7 +363,7 @@ def analyze_trial(
         ci = [lo, hi]
     else:
         rd, lo, hi, test_status, stat_status, ci = None, None, None, "INCONCLUSIVE", "INCONCLUSIVE", [None, None]
-    analysis["primary"] = {"method": "newcombe_hybrid_score_resolved_itt", "estimand": "all_randomized_itt_rd", "rd_resolved": rd, "ci95": ci, "hypothesis_test_status": test_status, "statistical_status": stat_status, "arms": arm_stats}
+    analysis["primary"] = {"method": "newcombe_hybrid_score_resolved_itt", "estimand": "all_randomized_itt_rd", "rd_resolved": rd, "ci95": ci, "hypothesis_test_status": test_status, "statistical_status": stat_status, "degenerate": bool(degenerate), "arms": arm_stats}
 
     missing = {}
     for arm in ("control", "treatment"):
@@ -456,6 +495,8 @@ def _tipping_sensitivity(frame: pd.DataFrame, bounds: SensitivityRange) -> dict[
         "smallest_interval_tip_linf_magnitude_in_range": interval_mag,
         "point_tip_distance_outside_range_linf": point_outside,
         "interval_tip_distance_outside_range_linf": interval_outside,
+        "outside_range_distance_search_steps": 200,
+        "outside_range_distance_resolution_linf": dmax / 200,
     }
 
 
@@ -516,14 +557,8 @@ def decide_90_day(analysis: dict[str, Any], *, sensitivity_range: SensitivityRan
         return {"stage": "DAY_90", "status": "INCONCLUSIVE / NOT AUTHORISED", "gates": {"sensitivity_range": "INCONCLUSIVE"}, "holdout_required": True}
     primary = analysis["primary"]
     gates: dict[str, str] = {}
-    if primary["ci95"][0] is None or primary.get("degenerate"):
-        gates["statistical_conversion"] = "INCONCLUSIVE"
-    elif primary["ci95"][0] > 0:
-        gates["statistical_conversion"] = "PASS"
-    elif primary["ci95"][1] < 0:
-        gates["statistical_conversion"] = "FAIL"
-    else:
-        gates["statistical_conversion"] = "INCONCLUSIVE"
+    # Reuse the analysis state so degeneracy can never be upgraded to PASS.
+    gates["statistical_conversion"] = primary["statistical_status"]
     gates["ascertainment"] = "PASS" if analysis["diagnostics_pass"] else "INCONCLUSIVE"
     gates["missingness_assumptions"] = "PASS" if analysis["missingness_assumptions"]["assumptions_pass"] else "INCONCLUSIVE"
     gates["sensitivity_robustness"] = "PASS" if analysis["sensitivity"]["status"] == "ROBUST" else "INCONCLUSIVE"
@@ -574,7 +609,8 @@ def _probability_metric(flags: list[bool], *, denominator_mask: list[bool] | Non
     numerator = int(values.sum())
     estimate = numerator / denominator if denominator else None
     mcse = sqrt(estimate * (1 - estimate) / denominator) if denominator else None
-    return {"estimate": estimate, "mcse": mcse, "numerator": numerator, "denominator": denominator}
+    ci = wilson_interval(numerator, denominator) if denominator else (None, None)
+    return {"estimate": estimate, "mcse": mcse, "ci95_wilson": list(ci), "numerator": numerator, "denominator": denominator}
 
 
 def _continuous_metric(values: list[float]) -> dict[str, Any]:
@@ -618,6 +654,8 @@ def monte_carlo(
         rows.append({
             "rd_est": analysis["primary"]["rd_resolved"], "lo": primary_ci[0], "hi": primary_ci[1],
             "truth": true_effect, "population_truth": trial.truth.population_itt_rd,
+            "true_margin90_population": trial.truth.population_itt_margin_90,
+            "true_margin90_sate": trial.truth.finite_population_sate_margin_90,
             "primary_defined": primary_defined,
             "primary_positive": bool(primary_defined and primary_ci[0] > 0),
             "primary_reject": bool(primary_defined and (primary_ci[0] > 0 or primary_ci[1] < 0)),
@@ -651,8 +689,19 @@ def monte_carlo(
         "ci_coverage_conditional_on_defined": _probability_metric(df.covers_truth.tolist(), denominator_mask=df.primary_defined.tolist()),
     }
     null_config = abs(base.eligible_effect) < 1e-15
-    metrics["type_i_error_unconditional"] = _probability_metric(df.primary_reject.tolist()) if null_config else {"estimate": None, "mcse": None, "numerator": 0, "denominator": 0}
+    metrics["type_i_error_unconditional"] = _probability_metric(df.primary_reject.tolist()) if null_config else {"estimate": None, "mcse": None, "ci95_wilson": [None, None], "numerator": 0, "denominator": 0}
     metrics["power_unconditional"] = _probability_metric(df.primary_positive.tolist())
+    metrics["false_statistical_positive_when_population_itt_nonpositive"] = (
+        _probability_metric(df.primary_positive.tolist()) if base.eligible_effect <= 0
+        else {"estimate": None, "mcse": None, "ci95_wilson": [None, None], "numerator": 0, "denominator": 0}
+    )
+    metrics["false_provisional_adoption_when_population_itt_nonpositive"] = (
+        _probability_metric(df.day90_provisional.tolist()) if base.eligible_effect <= 0
+        else {"estimate": None, "mcse": None, "ci95_wilson": [None, None], "numerator": 0, "denominator": 0}
+    )
+    nonviable_margin_mask = (df.true_margin90_population < decision_config.min_margin_per_customer).tolist()
+    metrics["false_provisional_adoption_when_true_margin_below_threshold"] = _probability_metric(
+        df.day90_provisional.tolist(), denominator_mask=nonviable_margin_mask)
     bias_errors = [v for v in df.bias.tolist() if v is not None and np.isfinite(v)]
     bias_metric = _continuous_metric(bias_errors)
     estimated_metric = _continuous_metric([v for v in df.rd_est.tolist() if v is not None and np.isfinite(v)])
@@ -662,11 +711,14 @@ def monte_carlo(
         "replicates": R, "seed": seed, "seed_stream_scheme": "numpy.SeedSequence.spawn; serial order-independent replicate streams",
         "replicate_seed_streams": per_arm_child_streams,
         "n_customers": base.n_customers, "scenario": base.outcome_missingness,
+        "margin_resolution_follows_outcome": base.margin_resolution_follows_outcome,
         "margin_bootstrap_replicates_per_trial": margin_bootstrap_reps,
         "margin_gate_metrics_include_bootstrap_replicates": margin_bootstrap_reps,
         "simulator_evaluation_only": {
             "population_itt_rd_mean": float(np.mean([r["population_truth"] for r in rows])),
             "finite_population_sate_mean": _continuous_metric([r["truth"] for r in rows]),
+            "population_itt_margin_90": float(np.mean([r["true_margin90_population"] for r in rows])),
+            "finite_population_sate_margin_90": _continuous_metric([r["true_margin90_sate"] for r in rows]),
             "conditional_effect": base.eligible_effect,
             "hidden_missingness_mechanism": base.outcome_missingness,
         },

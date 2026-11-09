@@ -16,7 +16,7 @@ def scenario_config(name: str, *, n: int, seed: int) -> ExperimentConfig:
     if name == "differential_missing":
         return replace(base, outcome_missingness="differential", missing_rate_control=0.01, missing_rate_treatment=0.08)
     if name == "outcome_dependent_missing":
-        return replace(base, outcome_missingness="outcome_dependent", missing_rate_control=0.03, missing_rate_treatment=0.03, missing_effect_if_repeat=2.0)
+        return replace(base, outcome_missingness="outcome_dependent", missing_rate_control=0.03, missing_rate_treatment=0.03, missing_effect_if_repeat=2.0, margin_resolution_follows_outcome=True)
     if name == "eligibility_dilution":
         return replace(base, p_early_repeat=0.55, p_optout_pre_day21=0.10, eligible_effect=0.05)
     if name == "rare_guardrails":

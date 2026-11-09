@@ -69,7 +69,7 @@ class SyntheticExperimentTests(unittest.TestCase):
         self.assertEqual(a["primary"]["method"], "newcombe_hybrid_score_resolved_itt")
 
     def test_truth_labels_cannot_change_analyst_decision(self):
-        t = generate_trial(ExperimentConfig(n_customers=5000, seed=23, eligible_effect=0.08, outcome_missingness="outcome_dependent", missing_rate_control=0.01, missing_rate_treatment=0.01, missing_effect_if_repeat=8))
+        t = generate_trial(ExperimentConfig(n_customers=5000, seed=23, eligible_effect=0.08, outcome_missingness="outcome_dependent", missing_rate_control=0.01, missing_rate_treatment=0.01, missing_effect_if_repeat=8, margin_resolution_follows_outcome=True))
         a1 = self.analysis(t)
         changed_truth = replace(t.truth, missingness_mechanism="complete", population_itt_rd=-0.9, finite_population_sate=0.9)
         a2 = self.analysis(replace(t, truth=changed_truth))
@@ -79,11 +79,67 @@ class SyntheticExperimentTests(unittest.TestCase):
         self.assertEqual(d1, d2)
         self.assertEqual(a1["missingness_assumptions"]["assumptions_pass"], a1["diagnostics_pass"])
 
+    def test_financial_truth_is_private_and_masked_when_purchase_unresolved(self):
+        cfg=ExperimentConfig(n_customers=5000,seed=232,outcome_missingness="outcome_dependent",
+                             missing_rate_control=.04,missing_rate_treatment=.04,
+                             missing_effect_if_repeat=2,margin_resolution_follows_outcome=True)
+        t=generate_trial(cfg); f=t.records
+        unresolved=~f.resolved_90.astype(bool)
+        self.assertGreater(int(unresolved.sum()),0)
+        for value_col,status_col in (("margin_90","margin_resolved_90"),("margin_180","margin_resolved_180")):
+            self.assertTrue(f.loc[unresolved,value_col].isna().all())
+            self.assertFalse(f.loc[unresolved,status_col].any())
+            self.assertTrue(f[value_col].notna().equals(f[status_col]))
+        self.assertTrue(np.isfinite(t.truth.margin_90_truth).all())
+        self.assertTrue(np.isfinite(t.truth.margin_180_truth).all())
+        expected_margin=(1-cfg.p_early_repeat)*(1-cfg.p_optout_pre_day21)*cfg.p_operationally_contactable*(cfg.eligible_effect*cfg.contribution_per_repeat-cfg.intervention_cost_per_sent)
+        self.assertAlmostEqual(t.truth.population_itt_margin_90,expected_margin)
+        self.assertAlmostEqual(t.truth.finite_population_sate_margin_90,float(np.mean(t.truth.potential_margin_treatment_90-t.truth.potential_margin_control_90)))
+        self.assertTrue(set(t.records.columns).isdisjoint({"margin_90_truth","margin_180_truth","true_outcome_90"}))
+        a1=self.analysis(t)
+        hidden=replace(t.truth,margin_90_truth=np.full(cfg.n_customers,1e9),margin_180_truth=np.full(cfg.n_customers,-1e9))
+        t2=replace(t,truth=hidden)
+        a2=self.analysis(t2)
+        self.assertEqual(a1,a2)
+        self.assertEqual(decide_adoption(a1,sensitivity_range=SENS),decide_adoption(a2,sensitivity_range=SENS))
+
+    def test_outcome_dependent_scenario_rejects_unmasked_financial_policy(self):
+        with self.assertRaisesRegex(ValueError,"requires margin_resolution_follows_outcome=True"):
+            generate_trial(ExperimentConfig(n_customers=100,outcome_missingness="outcome_dependent"))
+
+    def test_financial_masking_is_arm_symmetric_and_clean_default_is_preserved(self):
+        cfg=ExperimentConfig(n_customers=2000,seed=233,outcome_missingness="balanced_random",
+                             missing_rate_control=.15,missing_rate_treatment=.15,
+                             margin_resolution_follows_outcome=True)
+        t=generate_trial(cfg); f=t.records
+        for arm in ("control","treatment"):
+            rows=f.assignment.eq(arm)
+            expected=f.loc[rows,"resolved_90"].astype(bool).to_numpy()
+            rows_array=rows.to_numpy()
+            np.testing.assert_array_equal(f.loc[rows,"margin_resolved_90"].to_numpy(),expected & t.truth.margin_capture_90[rows_array])
+            np.testing.assert_array_equal(f.loc[rows,"margin_resolved_180"].to_numpy(),expected & t.truth.margin_capture_180[rows_array])
+        clean=generate_trial(ExperimentConfig(n_customers=1000,seed=234))
+        self.assertTrue(clean.records.margin_resolved_90.all())
+        self.assertTrue(clean.records.margin_resolved_180.all())
+
+    def test_zero_margin_is_observed_not_missing(self):
+        t=generate_trial(ExperimentConfig(n_customers=1000,seed=235,contribution_per_repeat=0,
+                                          intervention_cost_per_sent=0,margin_noise_sd=0,
+                                          margin_missing_rate=.25))
+        f=t.records
+        observed=f.margin_90.notna()
+        self.assertTrue((f.loc[observed,"margin_90"]==0).all())
+        self.assertGreater(int(observed.sum()),0)
+        self.assertLess(int(observed.sum()),len(f))
+        a=self.analysis(t)
+        self.assertEqual(a["commercial"]["90"]["arms"]["treatment"]["complete"],int(f.loc[f.assignment.eq("treatment"),"margin_90"].notna().sum()))
+
     def test_outcome_dependent_scenario_can_apparently_adopt(self):
         # The hidden departure is deliberately larger than this frozen illustrative range.
         cfg = ExperimentConfig(n_customers=30000, seed=991, eligible_effect=0.20, p_late_repeat=0.20,
                                outcome_missingness="outcome_dependent", missing_rate_control=0.002,
                                missing_rate_treatment=0.002, missing_effect_if_repeat=1.0,
+                               margin_resolution_follows_outcome=True,
                                contribution_per_repeat=100, intervention_cost_per_sent=0,
                                p_repeat_180_control=0.45, effect_180_eligible=0.20, margin_noise_sd=0)
         trial = generate_trial(cfg)
@@ -92,6 +148,27 @@ class SyntheticExperimentTests(unittest.TestCase):
         d = decide_adoption(a, sensitivity_range=narrow)
         self.assertEqual(a["missingness_assumptions"]["assumptions_pass"], True)
         self.assertEqual(d["day_90"]["status"], "PROVISIONAL ADOPT WITH HOLDOUT")
+
+    def test_null_outcome_dependent_false_adoption_remains_possible_without_oracle(self):
+        # A fixed null randomization draw checks possibility, not frequency.
+        cfg=ExperimentConfig(n_customers=4000,seed=54,eligible_effect=0,p_late_repeat=.18,
+                            p_repeat_180_control=.35,effect_180_eligible=0,
+                            p_complaint_control=0,p_optout_control=0,
+                            contribution_per_repeat=30,intervention_cost_per_sent=0,margin_noise_sd=0,
+                            outcome_missingness="outcome_dependent",missing_rate_control=.001,
+                            missing_rate_treatment=.001,missing_effect_if_repeat=2,
+                            margin_resolution_follows_outcome=True)
+        t=generate_trial(cfg)
+        sensitivity=SensitivityRange(-.001,.001,True,"HYPOTHETICAL SYNTHETIC RANGE")
+        a=self.analysis(t,sensitivity_range=sensitivity,margin_bootstrap_reps=1000)
+        d=decide_adoption(a,sensitivity_range=sensitivity)
+        self.assertEqual(t.truth.population_itt_rd,0)
+        self.assertEqual(t.truth.population_itt_margin_90,0)
+        self.assertEqual(int((~t.records.resolved_90).sum()),int(t.records.margin_90.isna().sum()))
+        self.assertEqual(a["missingness_assumptions"]["assumptions_pass"],True)
+        self.assertEqual(a["primary"]["statistical_status"],"PASS")
+        self.assertEqual(d["day_90"]["gates"]["margin_90"],"PASS")
+        self.assertEqual(d["day_90"]["status"],"PROVISIONAL ADOPT WITH HOLDOUT")
 
     def test_tipping_mapping_and_extreme_bounds(self):
         cfg = ExperimentConfig(n_customers=1000, seed=44, outcome_missingness="differential", missing_rate_control=.02, missing_rate_treatment=.03)
@@ -102,6 +179,8 @@ class SyntheticExperimentTests(unittest.TestCase):
         mapped = p["treatment"]["risk_resolved"]+(1-r_t)*.04 - p["control"]["risk_resolved"]-(1-r_c)*(-.03)
         self.assertAlmostEqual(mapped, a["primary"]["rd_resolved"]+(1-r_t)*.04-(1-r_c)*(-.03))
         self.assertIn("adverse_rd", a["extreme_bounds_descriptive_only"])
+        self.assertEqual(a["sensitivity"]["outside_range_distance_search_steps"],200)
+        self.assertGreaterEqual(a["sensitivity"]["outside_range_distance_resolution_linf"],0)
 
     def test_guardrail_baselines_and_rare_rates_calibrate(self):
         n = 150000
@@ -161,6 +240,17 @@ class SyntheticExperimentTests(unittest.TestCase):
         self.assertEqual(a["primary"]["statistical_status"],"INCONCLUSIVE")
         self.assertEqual(a["primary"]["ci95"],[None,None])
 
+    def test_all_events_versus_none_decision_cannot_upgrade_degenerate_analysis(self):
+        t=generate_trial(ExperimentConfig(n_customers=400,seed=412))
+        f=t.records.copy(); f["resolved_90"]=True; f["outcome_90"]=0.0
+        f.loc[f.assignment.eq("treatment"),"outcome_90"]=1.0
+        a=analyze_trial(f,sensitivity_range=SENS,margin_bootstrap_reps=5,missingness_assumptions_approved=True,bootstrap_seed_sequence=t.bootstrap_seed_sequence)
+        self.assertTrue(a["primary"]["degenerate"])
+        self.assertEqual(a["primary"]["statistical_status"],"INCONCLUSIVE")
+        d=decide_adoption(a,sensitivity_range=SENS)
+        self.assertEqual(d["day_90"]["gates"]["statistical_conversion"],"INCONCLUSIVE")
+        self.assertNotEqual(d["day_90"]["status"],"PROVISIONAL ADOPT WITH HOLDOUT")
+
     def test_missing_financial_records_180_triggers_rollback_without_rewriting_day90(self):
         t=generate_trial(ExperimentConfig(n_customers=1000,seed=3))
         a=self.analysis(t)
@@ -181,6 +271,14 @@ class SyntheticExperimentTests(unittest.TestCase):
 
     def test_seedsequence_spawn_keys_unique_and_reproducible(self):
         cfg=ExperimentConfig(n_customers=120,seed=50)
+        reusable=np.random.SeedSequence(99)
+        again_a=generate_trial(cfg,seed_sequence=reusable)
+        again_b=generate_trial(cfg,seed_sequence=reusable)
+        pd.testing.assert_frame_equal(again_a.records,again_b.records)
+        replicate_roots=np.random.SeedSequence(98).spawn(2)
+        rep_a=generate_trial(cfg,seed_sequence=replicate_roots[0])
+        rep_b=generate_trial(cfg,seed_sequence=replicate_roots[1])
+        self.assertFalse(rep_a.records.assignment.equals(rep_b.records.assignment))
         a=monte_carlo(cfg,replicates=20,seed=100,sensitivity_range=SENS,margin_bootstrap_reps=5)
         b=monte_carlo(cfg,replicates=20,seed=100,sensitivity_range=SENS,margin_bootstrap_reps=5)
         self.assertEqual(a,b)
@@ -199,11 +297,18 @@ class SyntheticExperimentTests(unittest.TestCase):
         self.assertEqual((m["numerator"],m["denominator"]),(2,3))
         self.assertAlmostEqual(m["estimate"],2/3)
         self.assertAlmostEqual(m["mcse"],sqrt((2/3)*(1/3)/3))
+        zero=_probability_metric([False]*10)
+        one=_probability_metric([True]*10)
+        self.assertEqual(zero["mcse"],0)
+        self.assertGreater(zero["ci95_wilson"][1],0)
+        self.assertLess(one["ci95_wilson"][0],1)
         t=generate_trial(ExperimentConfig(n_customers=250,seed=12))
         mc=monte_carlo(ExperimentConfig(n_customers=250,seed=12),replicates=6,seed=13,sensitivity_range=SENS,margin_bootstrap_reps=5)
         metric=mc["probability_metrics"]["ci_coverage_conditional_on_defined"]
         self.assertLessEqual(metric["denominator"],6)
         self.assertEqual(mc["effective_denominators"]["all_replicates"],6)
+        self.assertIn("false_statistical_positive_when_population_itt_nonpositive",mc["probability_metrics"])
+        self.assertIn("false_provisional_adoption_when_true_margin_below_threshold",mc["probability_metrics"])
 
     def test_same_day_sensitivity_resolved_only_and_order_status_retains_itt(self):
         t=generate_trial(ExperimentConfig(n_customers=2000,seed=4,same_day_ambiguous_rate=.3,p_first_order_status_error=.1,p_first_order_later_cancelled=.2))
