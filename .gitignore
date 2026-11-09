@@ -36,3 +36,5 @@ logs/
 .local/b2b3-gate-synthetic/
 # Private aggregate candidates and evidence; do not stage or publish.
 .local/b2b3-gate-output/
+# Private B2B-3 outcome candidates and execution evidence; not approved for publication.
+.local/b2b3-outcome-output/
