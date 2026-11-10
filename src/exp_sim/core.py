@@ -137,6 +137,16 @@ class SimulatorTruth:
     potential_margin_treatment_90: np.ndarray
     population_itt_margin_90: float
     finite_population_sate_margin_90: float
+    population_itt_rd_180: float
+    finite_population_sate_180: float
+    realized_outcome_180: np.ndarray
+    resolution_mask_180: np.ndarray
+    potential_control_180: np.ndarray
+    potential_treatment_180: np.ndarray
+    potential_margin_control_180: np.ndarray
+    potential_margin_treatment_180: np.ndarray
+    population_itt_margin_180: float
+    finite_population_sate_margin_180: float
 
 
 @dataclass(frozen=True)
@@ -212,6 +222,7 @@ def generate_trial(
     repeat180_c = early | (late_u < p180_c)
     repeat180_t = np.where(eligible, early | (late_u < p180_t), repeat180_c)
     repeat180 = np.where(treatment, repeat180_t, repeat180_c)
+    sate180 = float(np.mean(repeat180_t.astype(float) - repeat180_c.astype(float)))
 
     if config.outcome_missingness == "complete":
         resolved = np.ones(n, dtype=bool)
@@ -235,6 +246,8 @@ def generate_trial(
     margin180 = repeat180 * config.contribution_per_repeat - intervention_cost + margin_noise
     margin90_control = potential_c.astype(float) * config.contribution_per_repeat + margin_noise
     margin90_treatment = potential_t.astype(float) * config.contribution_per_repeat - eligible.astype(float) * config.intervention_cost_per_sent + margin_noise
+    margin180_control = repeat180_c.astype(float) * config.contribution_per_repeat + margin_noise
+    margin180_treatment = repeat180_t.astype(float) * config.contribution_per_repeat - eligible.astype(float) * config.intervention_cost_per_sent + margin_noise
     margin_capture90 = rng_margin.random(n) >= config.margin_missing_rate
     margin_capture180 = rng_margin.random(n) >= config.margin_missing_rate
     # Apply one common purchase-resolution policy to both arms. When enabled,
@@ -284,6 +297,16 @@ def generate_trial(
         potential_margin_treatment_90=margin90_treatment,
         population_itt_margin_90=float(pi_population * (config.eligible_effect * config.contribution_per_repeat - config.intervention_cost_per_sent)),
         finite_population_sate_margin_90=float(np.mean(margin90_treatment - margin90_control)),
+        population_itt_rd_180=float(pi_population * config.effect_180_eligible),
+        finite_population_sate_180=sate180,
+        realized_outcome_180=repeat180,
+        resolution_mask_180=resolved.copy(),
+        potential_control_180=repeat180_c,
+        potential_treatment_180=repeat180_t,
+        potential_margin_control_180=margin180_control,
+        potential_margin_treatment_180=margin180_treatment,
+        population_itt_margin_180=float(pi_population * (config.effect_180_eligible * config.contribution_per_repeat - config.intervention_cost_per_sent)),
+        finite_population_sate_margin_180=float(np.mean(margin180_treatment - margin180_control)),
     )
     return SyntheticTrial(records=records, truth=truth, bootstrap_seed_sequence=streams[8], replicate_seed_sequence=root)
 
@@ -627,18 +650,27 @@ def monte_carlo(
     *,
     replicates: int = 250,
     seed: int = 33001,
+    seed_sequence: np.random.SeedSequence | None = None,
+    replicate_start: int = 0,
     sensitivity_range: SensitivityRange | None = None,
     decision_config: DecisionConfig = DecisionConfig(),
     margin_bootstrap_reps: int = 1000,
     missingness_assumptions_approved: bool = True,
 ) -> dict[str, Any]:
-    """Run serial, schedule-independent synthetic Monte Carlo with independent spawned streams."""
+    """Run a stable replicate-ID block of serial synthetic Monte Carlo trials."""
     if replicates < 1:
         raise ValueError("replicates must be positive")
-    campaign_seed = np.random.SeedSequence(seed)
-    replicate_sequences = campaign_seed.spawn(replicates)
+    if replicate_start < 0:
+        raise ValueError("replicate_start must be non-negative")
+    campaign_seed = _clone_seed_sequence(seed_sequence) if seed_sequence is not None else np.random.SeedSequence(seed)
+    replicate_sequences = [
+        np.random.SeedSequence(campaign_seed.entropy,
+                               spawn_key=campaign_seed.spawn_key + (replicate_start + i,),
+                               pool_size=campaign_seed.pool_size)
+        for i in range(replicates)
+    ]
     rows = []
-    for replicate_sequence in replicate_sequences:
+    for local_id, replicate_sequence in enumerate(replicate_sequences):
         trial = generate_trial(base, seed_sequence=replicate_sequence)
         analysis = analyze_trial(
             trial.records, sensitivity_range=sensitivity_range, decision_config=decision_config,
@@ -651,46 +683,148 @@ def monte_carlo(
         primary_ci = analysis["primary"]["ci95"]
         primary_defined = primary_ci[0] is not None and primary_ci[1] is not None
         true_effect = trial.truth.finite_population_sate
+        commercial90 = analysis["commercial"]["90"]
+        commercial180 = analysis["commercial"]["180"]
+        gates90 = decision["day_90"]["gates"]
+        complete180 = (commercial180["completeness"] >= decision_config.min_margin_completeness
+                       and commercial180["absolute_missingness_difference"] <= decision_config.max_differential_margin_missingness)
+        def finite_or_none(value: float | None) -> float | None:
+            return float(value) if value is not None and np.isfinite(value) else None
         rows.append({
+            "replicate_id": replicate_start + local_id,
+            "seed_key": {"entropy": campaign_seed.entropy, "spawn_key": list(replicate_sequence.spawn_key)},
             "rd_est": analysis["primary"]["rd_resolved"], "lo": primary_ci[0], "hi": primary_ci[1],
             "truth": true_effect, "population_truth": trial.truth.population_itt_rd,
+            "truth_180": trial.truth.finite_population_sate_180,
+            "population_truth_180": trial.truth.population_itt_rd_180,
             "true_margin90_population": trial.truth.population_itt_margin_90,
             "true_margin90_sate": trial.truth.finite_population_sate_margin_90,
+            "true_margin180_population": trial.truth.population_itt_margin_180,
+            "true_margin180_sate": trial.truth.finite_population_sate_margin_180,
             "primary_defined": primary_defined,
             "primary_positive": bool(primary_defined and primary_ci[0] > 0),
             "primary_reject": bool(primary_defined and (primary_ci[0] > 0 or primary_ci[1] < 0)),
+            "false_statistical_rejection_under_known_truth": bool(
+                primary_defined and (
+                    (abs(trial.truth.population_itt_rd) < 1e-15 and (primary_ci[0] > 0 or primary_ci[1] < 0))
+                    or (trial.truth.population_itt_rd > 0 and primary_ci[1] < 0)
+                    or (trial.truth.population_itt_rd < 0 and primary_ci[0] > 0)
+                )),
+            "primary_pass": analysis["primary"]["statistical_status"] == "PASS",
+            "primary_statistical_status": analysis["primary"]["statistical_status"],
+            "primary_arm_counts": {
+                arm: {"n_randomized": counts["n_randomized"],
+                      "n_resolved": counts["n_resolved"], "n_events": counts["n_events"]}
+                for arm, counts in analysis["primary"]["arms"].items()},
+            "primary_arm_risk_resolved": {
+                arm: counts["risk_resolved"] for arm, counts in analysis["primary"]["arms"].items()},
+            "outcome_completeness": analysis["ascertainment"]["completeness"],
+            "outcome_missing_fraction_by_arm": analysis["ascertainment"]["missing_fraction_by_arm"],
+            "resolved_outcome_assumptions_pass": analysis["missingness_assumptions"]["assumptions_pass"],
+            "outcome_ascertainment_diagnostics_pass": analysis["diagnostics_pass"],
+            "outcome_missingness_absolute_difference": analysis["ascertainment"]["absolute_missingness_difference"],
             "covers_truth": bool(primary_defined and primary_ci[0] <= true_effect <= primary_ci[1]),
             "complaint_state": decision["day_90"]["gates"].get("complaint", "INCONCLUSIVE"),
             "optout_state": decision["day_90"]["gates"].get("optout", "INCONCLUSIVE"),
+            "estimated_incremental_margin_90": finite_or_none(commercial90["difference_t_minus_c"]),
+            "incremental_margin_90_ci95": [finite_or_none(v) for v in commercial90["ci95_percentile_bootstrap"]],
+            "margin_completeness_by_arm_90": commercial90["completeness_by_arm"],
+            "margin_completeness_90": finite_or_none(commercial90["completeness"]),
+            "margin_missingness_difference_90": finite_or_none(commercial90["absolute_missingness_difference"]),
+            "margin_gate_90": gates90.get("margin_90", "INCONCLUSIVE"),
+            "margin_completeness_gate_90": gates90.get("margin_completeness_90", "INCONCLUSIVE"),
+            "estimated_incremental_margin_180": finite_or_none(commercial180["difference_t_minus_c"]),
+            "incremental_margin_180_ci95": [finite_or_none(v) for v in commercial180["ci95_percentile_bootstrap"]],
+            "margin_completeness_by_arm_180": commercial180["completeness_by_arm"],
+            "margin_completeness_180": finite_or_none(commercial180["completeness"]),
+            "margin_missingness_difference_180": finite_or_none(commercial180["absolute_missingness_difference"]),
+            "margin_gate_180": _margin_status(commercial180, config=decision_config, horizon="180") if complete180 else "INCONCLUSIVE",
+            "margin_completeness_gate_180": "PASS" if complete180 else "INCONCLUSIVE",
+            "day90_non_adoption_reasons": ({k: v for k, v in gates90.items() if v != "PASS"}
+                                            if d90 != "PROVISIONAL ADOPT WITH HOLDOUT" else {}),
+            "day180_decision_reason": decision["day_180"].get("reason"),
+            "day180_decision_action": decision["day_180"].get("action"),
             "sensitivity_state": analysis["sensitivity"]["status"],
             "day90_status": d90, "day180_status": d180,
+            "day90_decision": d90, "day180_decision": d180,
             "day90_provisional": d90 == "PROVISIONAL ADOPT WITH HOLDOUT",
             "day180_confirm": d180 == "CONFIRM", "day180_rollback": d180 == "ROLLBACK",
+            "day180_applicable": d180 in {"CONFIRM", "ROLLBACK"},
             "joint_confirmed": d90 == "PROVISIONAL ADOPT WITH HOLDOUT" and d180 == "CONFIRM",
+            "joint_rollback": d90 == "PROVISIONAL ADOPT WITH HOLDOUT" and d180 == "ROLLBACK",
             "inconclusive_90": d90.startswith("INCONCLUSIVE"),
+            "primary_inconclusive": analysis["primary"]["statistical_status"] == "INCONCLUSIVE",
+            "primary_fail": analysis["primary"]["statistical_status"] == "FAIL",
+            "complaint_fail": decision["day_90"]["gates"].get("complaint") == "FAIL",
+            "optout_fail": decision["day_90"]["gates"].get("optout") == "FAIL",
+            "any_guardrail_inconclusive": "INCONCLUSIVE" in {decision["day_90"]["gates"].get("complaint"), decision["day_90"]["gates"].get("optout")},
             "bias": None if analysis["primary"]["rd_resolved"] is None else analysis["primary"]["rd_resolved"] - true_effect,
             "margin_bootstrap_reps": margin_bootstrap_reps,
         })
+    return summarize_replicate_results(
+        base, rows, seed=seed, seed_sequence=campaign_seed,
+        replicate_start=replicate_start, sensitivity_range=sensitivity_range,
+        decision_config=decision_config, margin_bootstrap_reps=margin_bootstrap_reps,
+    )
+
+
+def summarize_replicate_results(
+    base: ExperimentConfig,
+    rows: list[dict[str, Any]],
+    *,
+    seed: int,
+    seed_sequence: np.random.SeedSequence | None = None,
+    replicate_start: int = 0,
+    sensitivity_range: SensitivityRange | None = None,
+    decision_config: DecisionConfig = DecisionConfig(),
+    margin_bootstrap_reps: int = 1000,
+) -> dict[str, Any]:
+    """Rebuild all campaign metrics from persisted privacy-safe replicate rows."""
+    if not rows:
+        raise ValueError("At least one replicate row is required")
     df = pd.DataFrame(rows)
     R = len(rows)
+    campaign_seed = _clone_seed_sequence(seed_sequence) if seed_sequence is not None else np.random.SeedSequence(seed)
     metrics: dict[str, Any] = {
+        "primary_statistical_inconclusive_rate": _probability_metric(df.primary_inconclusive.tolist()),
+        "primary_statistical_fail_rate": _probability_metric(df.primary_fail.tolist()),
         "day90_provisional_adoption": _probability_metric(df.day90_provisional.tolist()),
         "day90_inconclusive": _probability_metric(df.inconclusive_90.tolist()),
+        "outcome_ascertainment_diagnostics_pass": _probability_metric(
+            df.outcome_ascertainment_diagnostics_pass.tolist()),
         "day180_confirm_marginal": _probability_metric(df.day180_confirm.tolist()),
         "day180_rollback_marginal": _probability_metric(df.day180_rollback.tolist()),
+        "day180_not_applicable_marginal": _probability_metric((~df.day180_applicable).tolist()),
         "joint_90_provisional_and_180_confirm": _probability_metric(df.joint_confirmed.tolist()),
+        "joint_90_provisional_and_180_rollback": _probability_metric(df.joint_rollback.tolist()),
         "day180_confirm_given_90_provisional": _probability_metric(df.day180_confirm.tolist(), denominator_mask=df.day90_provisional.tolist()),
         "day180_rollback_given_90_provisional": _probability_metric(df.day180_rollback.tolist(), denominator_mask=df.day90_provisional.tolist()),
         "complaint_guardrail_pass": _probability_metric((df.complaint_state == "PASS").tolist()),
         "complaint_guardrail_inconclusive": _probability_metric((df.complaint_state == "INCONCLUSIVE").tolist()),
+        "complaint_guardrail_fail": _probability_metric(df.complaint_fail.tolist()),
+        "margin_90_gate_pass": _probability_metric((df.margin_gate_90 == "PASS").tolist()),
+        "margin_90_gate_fail": _probability_metric((df.margin_gate_90 == "FAIL").tolist()),
+        "margin_90_gate_inconclusive": _probability_metric((df.margin_gate_90 == "INCONCLUSIVE").tolist()),
+        "margin_completeness_90_gate_pass": _probability_metric((df.margin_completeness_gate_90 == "PASS").tolist()),
+        "margin_completeness_90_gate_inconclusive": _probability_metric((df.margin_completeness_gate_90 == "INCONCLUSIVE").tolist()),
+        "margin_180_gate_pass": _probability_metric((df.margin_gate_180 == "PASS").tolist()),
+        "margin_180_gate_fail": _probability_metric((df.margin_gate_180 == "FAIL").tolist()),
+        "margin_180_gate_inconclusive": _probability_metric((df.margin_gate_180 == "INCONCLUSIVE").tolist()),
+        "margin_completeness_180_gate_pass": _probability_metric((df.margin_completeness_gate_180 == "PASS").tolist()),
+        "margin_completeness_180_gate_inconclusive": _probability_metric((df.margin_completeness_gate_180 == "INCONCLUSIVE").tolist()),
         "optout_guardrail_pass": _probability_metric((df.optout_state == "PASS").tolist()),
         "optout_guardrail_inconclusive": _probability_metric((df.optout_state == "INCONCLUSIVE").tolist()),
+        "optout_guardrail_fail": _probability_metric(df.optout_fail.tolist()),
+        "any_guardrail_inconclusive": _probability_metric(df.any_guardrail_inconclusive.tolist()),
         "sensitivity_robust": _probability_metric((df.sensitivity_state == "ROBUST").tolist()),
         "ci_coverage_conditional_on_defined": _probability_metric(df.covers_truth.tolist(), denominator_mask=df.primary_defined.tolist()),
     }
+    metrics["rollback_given_provisional_adoption"] = metrics["day180_rollback_given_90_provisional"]
     null_config = abs(base.eligible_effect) < 1e-15
     metrics["type_i_error_unconditional"] = _probability_metric(df.primary_reject.tolist()) if null_config else {"estimate": None, "mcse": None, "ci95_wilson": [None, None], "numerator": 0, "denominator": 0}
-    metrics["power_unconditional"] = _probability_metric(df.primary_positive.tolist())
+    metrics["power_unconditional"] = _probability_metric(df.primary_reject.tolist())
+    metrics["positive_directional_primary_conclusion"] = _probability_metric(df.primary_positive.tolist())
+    metrics["primary_statistical_pass_probability"] = _probability_metric(df.primary_pass.tolist())
     metrics["false_statistical_positive_when_population_itt_nonpositive"] = (
         _probability_metric(df.primary_positive.tolist()) if base.eligible_effect <= 0
         else {"estimate": None, "mcse": None, "ci95_wilson": [None, None], "numerator": 0, "denominator": 0}
@@ -702,33 +836,74 @@ def monte_carlo(
     nonviable_margin_mask = (df.true_margin90_population < decision_config.min_margin_per_customer).tolist()
     metrics["false_provisional_adoption_when_true_margin_below_threshold"] = _probability_metric(
         df.day90_provisional.tolist(), denominator_mask=nonviable_margin_mask)
+    false_adoption_mask = (df.day90_provisional & (df.true_margin90_population < decision_config.min_margin_per_customer)).tolist()
+    metrics["false_adoption_day180_confirm_given_false_adoption"] = _probability_metric(df.day180_confirm.tolist(), denominator_mask=false_adoption_mask)
+    metrics["false_adoption_day180_rollback_given_false_adoption"] = _probability_metric(df.day180_rollback.tolist(), denominator_mask=false_adoption_mask)
+    metrics["false_adoption_joint_90_provisional_180_confirm"] = _probability_metric(df.joint_confirmed.tolist(), denominator_mask=nonviable_margin_mask)
+    below_180_hurdle = (df.true_margin180_population < decision_config.min_margin_180_point).tolist()
+    metrics["false_day180_confirmation_when_true_margin_below_threshold"] = _probability_metric(
+        (df.day180_status == "CONFIRM").tolist(), denominator_mask=below_180_hurdle)
+    metrics["false_day180_confirmation_given_provisional_adoption_when_true_margin_below_threshold"] = _probability_metric(
+        (df.day180_status == "CONFIRM").tolist(),
+        denominator_mask=(df.day90_provisional & np.asarray(below_180_hurdle, dtype=bool)).tolist())
+    metrics["false_statistical_rejection_under_known_truth"] = _probability_metric(
+        df.false_statistical_rejection_under_known_truth.tolist())
     bias_errors = [v for v in df.bias.tolist() if v is not None and np.isfinite(v)]
     bias_metric = _continuous_metric(bias_errors)
     estimated_metric = _continuous_metric([v for v in df.rd_est.tolist() if v is not None and np.isfinite(v)])
-    per_arm_child_streams = [{"entropy": int(s.entropy), "spawn_key": list(s.spawn_key)} for s in replicate_sequences]
+    margin90_metric = _continuous_metric([v for v in df.estimated_incremental_margin_90.tolist()
+                                          if v is not None and np.isfinite(v)])
+    margin180_metric = _continuous_metric([v for v in df.estimated_incremental_margin_180.tolist()
+                                           if v is not None and np.isfinite(v)])
     return {
         "label": "HYPOTHETICAL SYNTHETIC MONTE CARLO; NOT BUSINESS EVIDENCE",
-        "replicates": R, "seed": seed, "seed_stream_scheme": "numpy.SeedSequence.spawn; serial order-independent replicate streams",
-        "replicate_seed_streams": per_arm_child_streams,
+        "replicates": R, "seed": seed if seed_sequence is None else campaign_seed.entropy,
+        "seed_spawn_key": list(campaign_seed.spawn_key), "replicate_start": replicate_start,
+        "seed_stream_scheme": "NumPy SeedSequence identity = scenario spawn key + stable replicate ID",
+        "replicate_seed_streams": [r["seed_key"] for r in rows],
         "n_customers": base.n_customers, "scenario": base.outcome_missingness,
+        "data_generating_parameters": asdict(base),
         "margin_resolution_follows_outcome": base.margin_resolution_follows_outcome,
         "margin_bootstrap_replicates_per_trial": margin_bootstrap_reps,
         "margin_gate_metrics_include_bootstrap_replicates": margin_bootstrap_reps,
         "simulator_evaluation_only": {
             "population_itt_rd_mean": float(np.mean([r["population_truth"] for r in rows])),
             "finite_population_sate_mean": _continuous_metric([r["truth"] for r in rows]),
+            "population_itt_rd_90": float(np.mean([r["population_truth"] for r in rows])),
+            "population_itt_rd_180": float(np.mean([r["population_truth_180"] for r in rows])),
+            "finite_population_sate_180_mean": _continuous_metric([r["truth_180"] for r in rows]),
             "population_itt_margin_90": float(np.mean([r["true_margin90_population"] for r in rows])),
             "finite_population_sate_margin_90": _continuous_metric([r["true_margin90_sate"] for r in rows]),
+            "population_itt_margin_180": float(np.mean([r["true_margin180_population"] for r in rows])),
+            "finite_population_sate_margin_180": _continuous_metric([r["true_margin180_sate"] for r in rows]),
             "conditional_effect": base.eligible_effect,
             "hidden_missingness_mechanism": base.outcome_missingness,
         },
-        "continuous_metrics": {"bias_vs_finite_population_sate": bias_metric, "estimated_resolved_rd": estimated_metric},
+        "continuous_metrics": {"bias_vs_finite_population_sate": bias_metric,
+                               "estimated_resolved_rd": estimated_metric,
+                               "estimated_incremental_margin_90": margin90_metric,
+                               "estimated_incremental_margin_180": margin180_metric},
         "probability_metrics": metrics,
+        "replicate_results": rows,
         "effective_denominators": {
             "all_replicates": R,
             "primary_interval_defined": int(df.primary_defined.sum()),
             "day90_provisional_adoption": int(df.day90_provisional.sum()),
+            "day180_applicable": int(df.day180_applicable.sum()),
+            "false_provisional_adoption": int(sum(false_adoption_mask)),
+            "false_day180_confirmation_truth_eligible": int(sum(below_180_hurdle)),
+            "false_day180_confirmation_given_provisional_adoption_truth_eligible": int(sum(
+                np.asarray(df.day90_provisional.tolist(), dtype=bool) & np.asarray(below_180_hurdle, dtype=bool))),
+            "primary_statistical_inconclusive": int(df.primary_inconclusive.sum()),
+            "complaint_guardrail_fail": int(df.complaint_fail.sum()),
+            "optout_guardrail_fail": int(df.optout_fail.sum()),
             "margin_bootstrap_replicates_per_trial": margin_bootstrap_reps,
+        },
+        "longitudinal_interpretation": {
+            "same_synthetic_customers_at_day90_and_day180": True,
+            "shared_purchase_latent_draw": True,
+            "day180_is_independent_replication": False,
+            "day180_is_later_follow_up_not_independent_safety_safeguard": True,
         },
         "status_counts": {"day90": {str(k): int(v) for k, v in df.day90_status.value_counts(dropna=False).items()}, "day180": {str(k): int(v) for k, v in df.day180_status.value_counts(dropna=False).items()}},
         "smoke_results_are_not_precise_operating_characteristics": R < 5000,
