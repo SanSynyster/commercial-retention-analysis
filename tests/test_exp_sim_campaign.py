@@ -13,16 +13,17 @@ import time
 import src.exp_sim.campaign as campaign_module
 from src.exp_sim.campaign import (
     FULL_CAMPAIGN_SEED, MIN_CAMPAIGN_CUSTOMERS, SCENARIO_NAMES,
-    run_campaign, scenario_matrix, scenario_truth, validate_scenario_matrix,
+    campaign_configuration_fingerprint, run_campaign, scenario_matrix, scenario_truth,
+    summarize_h_i_comparison, validate_scenario_matrix, _scenario_seed_sequences,
 )
 from src.exp_sim.core import ExperimentConfig, SensitivityRange, generate_trial, monte_carlo
 
 
 class ScenarioCampaignTests(unittest.TestCase):
-    def test_matrix_contains_eight_valid_hypothetical_scenarios(self):
+    def test_matrix_contains_nine_valid_hypothetical_scenarios(self):
         configs=scenario_matrix(n_customers=600,seed=781)
         self.assertEqual(tuple(configs),SCENARIO_NAMES)
-        self.assertEqual(len(configs),8)
+        self.assertEqual(len(configs),9)
         self.assertEqual(len({c.seed for c in configs.values()}),1)  # shared ID seed; MC streams vary by family
         for config in configs.values():
             config.validate()
@@ -31,16 +32,71 @@ class ScenarioCampaignTests(unittest.TestCase):
 
     def test_campaign_defaults_use_assurance_sample_and_fresh_seed(self):
         self.assertGreaterEqual(MIN_CAMPAIGN_CUSTOMERS, 25_000)
-        self.assertNotIn(FULL_CAMPAIGN_SEED, (20261109, 20261110))
+        self.assertNotIn(FULL_CAMPAIGN_SEED, (20261109, 20261110, 20261111, 20261112))
         np=__import__("numpy")
-        scenario_seeds=np.random.SeedSequence(FULL_CAMPAIGN_SEED).spawn(len(SCENARIO_NAMES))
+        scenario_seeds=_scenario_seed_sequences(FULL_CAMPAIGN_SEED)
         identities={(int(child.entropy),child.spawn_key+(replicate_id,))
                     for child in scenario_seeds for replicate_id in range(10_000)}
-        self.assertEqual(len(identities),80_000)
+        self.assertEqual(len(identities),80_000)  # H/I intentionally share paired stream identities
+        self.assertEqual(scenario_seeds[7].spawn_key,scenario_seeds[8].spawn_key)
+        self.assertTrue(all(scenario_seeds[k].spawn_key != scenario_seeds[7].spawn_key for k in range(7)))
         prior={(int(child.entropy),child.spawn_key+(replicate_id,))
                for child in np.random.SeedSequence(20261109).spawn(len(SCENARIO_NAMES))
                for replicate_id in range(10_000)}
         self.assertTrue(identities.isdisjoint(prior))
+        fp=campaign_configuration_fingerprint()
+        self.assertEqual(fp,campaign_configuration_fingerprint())
+        self.assertNotEqual(fp,"0d030c9e550d9d088b8a5243e135408832395786212fb6b32a880b47a7ff6d7e")
+
+    def test_i_is_complete_data_twin_with_identical_analytic_truth(self):
+        configs=scenario_matrix(n_customers=25_000,seed=20261113)
+        h=configs["H_mnar_below_commercial_hurdle"]
+        i=configs["I_complete_twin_below_hurdle"]
+        self.assertEqual({k:v for k,v in h.__dict__.items() if k!="outcome_missingness"},
+                         {k:v for k,v in i.__dict__.items() if k!="outcome_missingness"})
+        self.assertEqual(h.outcome_missingness,"outcome_dependent")
+        self.assertEqual(i.outcome_missingness,"complete")
+        th,ti=scenario_truth(h,"H_mnar_below_commercial_hurdle"),scenario_truth(i,"I_complete_twin_below_hurdle")
+        for field in ("population_itt_rd_90","population_itt_rd_180",
+                      "population_incremental_margin_90","population_incremental_margin_180",
+                      "complaint_itt_risk_difference","optout_itt_risk_difference"):
+            self.assertAlmostEqual(th[field],ti[field],places=14)
+
+    def test_h_i_shared_random_numbers_and_paired_comparison_precision(self):
+        configs=scenario_matrix(n_customers=3000,seed=881)
+        streams=_scenario_seed_sequences(882)
+        hcfg=configs["H_mnar_below_commercial_hurdle"]
+        icfg=configs["I_complete_twin_below_hurdle"]
+        ht=generate_trial(hcfg,seed_sequence=streams[7])
+        it=generate_trial(icfg,seed_sequence=streams[8])
+        np=__import__("numpy")
+        for col in ("assignment","eligible_day21","sent","delivered","engaged",
+                    "complaint","optout_post_randomization"):
+            self.assertTrue(ht.records[col].equals(it.records[col]),col)
+        np.testing.assert_array_equal(ht.truth.realized_outcome_90,it.truth.realized_outcome_90)
+        np.testing.assert_array_equal(ht.truth.potential_treatment_90,it.truth.potential_treatment_90)
+        np.testing.assert_array_equal(ht.truth.margin_90_truth,it.truth.margin_90_truth)
+        hres=ht.records["resolved_90"]
+        self.assertTrue(ht.records.loc[hres,"outcome_90"].equals(it.records.loc[hres,"outcome_90"]))
+        self.assertTrue(ht.records.loc[hres,"margin_90"].equals(it.records.loc[hres,"margin_90"]))
+        kwargs=dict(replicates=5,sensitivity_range=SensitivityRange(-.1,.1,True,"test"),margin_bootstrap_reps=3)
+        hm=monte_carlo(hcfg,seed_sequence=streams[7],**kwargs)["replicate_results"]
+        im=monte_carlo(icfg,seed_sequence=streams[8],**kwargs)["replicate_results"]
+        comparison=summarize_h_i_comparison(hm,im)
+        self.assertTrue(comparison["pairing_verified"])
+        paired=comparison["false_provisional_adoption_h_minus_i"]
+        self.assertEqual(paired["denominator_pairs"],5)
+        expected=np.asarray([int(a["day90_provisional"] and a["true_margin90_population"]<.5)-
+                             int(b["day90_provisional"] and b["true_margin90_population"]<.5)
+                             for a,b in zip(hm,im)],dtype=float)
+        self.assertAlmostEqual(paired["estimate_h_minus_i"],float(expected.mean()))
+        self.assertAlmostEqual(paired["mcse_paired"],float(expected.std(ddof=1)/np.sqrt(5)))
+        self.assertLess(paired["ci95_conservative_hoeffding"][0],paired["estimate_h_minus_i"])
+        self.assertGreater(paired["ci95_conservative_hoeffding"][1],paired["estimate_h_minus_i"])
+        self.assertEqual(comparison["H"]["false_day180_confirmation"]["denominator"],0)
+        self.assertEqual(comparison["H"]["false_day180_confirmation_given_provisional_adoption"]["denominator"],0)
+        # False adoption is scored against the below-hurdle truth in both arms.
+        self.assertEqual(comparison["H"]["false_provisional_adoption"]["denominator"],5)
 
     def test_scenario_truth_and_recalibration(self):
         configs=scenario_matrix(n_customers=25_000,seed=20261110)
@@ -139,7 +195,7 @@ class ScenarioCampaignTests(unittest.TestCase):
 
     def test_unresolved_purchase_outcomes_mask_all_linked_financial_fields(self):
         configs=scenario_matrix(n_customers=5000,seed=787)
-        for name in ("C_random_missingness", "D_outcome_dependent_missingness"):
+        for name in ("C_random_missingness", "D_outcome_dependent_missingness", "H_mnar_below_commercial_hurdle"):
             trial=generate_trial(configs[name])
             unresolved=~trial.records["resolved_90"]
             self.assertGreater(int(unresolved.sum()),0)
@@ -147,6 +203,9 @@ class ScenarioCampaignTests(unittest.TestCase):
             self.assertTrue(trial.records.loc[unresolved,"margin_90"].isna().all())
             self.assertTrue(trial.records.loc[unresolved,"margin_180"].isna().all())
             self.assertFalse(any("truth" in column or "hidden" in column for column in trial.records.columns))
+        complete=generate_trial(scenario_matrix(n_customers=5000,seed=787)["I_complete_twin_below_hurdle"])
+        self.assertTrue(complete.records["resolved_90"].all())
+        self.assertTrue(complete.records["outcome_90"].notna().all())
 
     def test_ground_truth_distinguishes_persistent_effect_from_acceleration(self):
         configs=scenario_matrix(n_customers=1000,seed=783)
@@ -222,13 +281,20 @@ class ScenarioCampaignTests(unittest.TestCase):
             # Simulate interruption after the first A block; resume with a
             # different block size must fill only missing replicate IDs.
             (path/"A_clean_null"/"block-00000002-00000004.jsonl.gz").unlink()
+            # Also remove H's second block while I remains complete: resume must
+            # regenerate the same paired H records under a different block size.
+            (path/"H_mnar_below_commercial_hurdle"/"block-00000002-00000004.jsonl.gz").unlink()
             second=run_campaign(block_size=3,output_dir=path,resume=True,**kwargs)
             comparison=run_campaign(block_size=3,output_dir=comparison_path,**kwargs)
             self.assertEqual(first["status"],"COMPLETE")
             self.assertEqual(second["status"],"COMPLETE")
             self.assertEqual(comparison["status"],"COMPLETE")
-            self.assertEqual(len(second["scenarios"]),8)
+            self.assertEqual(len(second["scenarios"]),9)
             self.assertEqual(tuple(second["scenarios"]),SCENARIO_NAMES)
+            self.assertTrue(second["H_I_comparison"]["pairing_verified"])
+            paired_path=Path(__file__).resolve().parents[1]/second["H_I_comparison"]["path"]
+            paired=json.loads(paired_path.read_text())
+            self.assertEqual(paired["false_provisional_adoption_h_minus_i"]["denominator_pairs"],4)
             for scenario_name in SCENARIO_NAMES:
                 scenario_summary=json.loads((path/scenario_name/"summary.json").read_text())
                 reference_scenario=json.loads((comparison_path/scenario_name/"summary.json").read_text())
@@ -242,6 +308,9 @@ class ScenarioCampaignTests(unittest.TestCase):
                             rows.extend(json.loads(line) for line in stream)
                     return rows
                 self.assertEqual(read_scenario_rows(scenario_summary),read_scenario_rows(reference_scenario))
+            hrows=read_scenario_rows(json.loads((path/"H_mnar_below_commercial_hurdle"/"summary.json").read_text()))
+            irows=read_scenario_rows(json.loads((path/"I_complete_twin_below_hurdle"/"summary.json").read_text()))
+            self.assertEqual([r["seed_key"] for r in hrows],[r["seed_key"] for r in irows])
             summary=json.loads((path/"A_clean_null"/"summary.json").read_text())
             reference=json.loads((comparison_path/"A_clean_null"/"summary.json").read_text())
             self.assertEqual(summary["effective_denominators"]["all_replicates"],4)

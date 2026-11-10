@@ -26,9 +26,9 @@ SCENARIO_NAMES = (
     "A_clean_null", "B_positive_persistent_effect", "C_random_missingness",
     "D_outcome_dependent_missingness", "E_rare_experience_harm",
     "F_positive_conversion_negative_margin", "G_purchase_acceleration",
-    "H_mnar_below_commercial_hurdle",
+    "H_mnar_below_commercial_hurdle", "I_complete_twin_below_hurdle",
 )
-FULL_CAMPAIGN_SEED = 20261111  # distinct from both 003B and 003C calibration seeds
+FULL_CAMPAIGN_SEED = 20261113  # fresh; 003E pilot uses a distinct seed
 MIN_CAMPAIGN_CUSTOMERS = 25_000
 DEFAULT_CAMPAIGN_REPLICATES = 10_000
 DEFAULT_BLOCK_SIZE = 500
@@ -37,7 +37,7 @@ CHECKPOINT_FORMAT = "exp-sim-replicate-block-v1"
 
 def scenario_matrix(*, n_customers: int = MIN_CAMPAIGN_CUSTOMERS,
                     seed: int = FULL_CAMPAIGN_SEED) -> dict[str, ExperimentConfig]:
-    """Return the eight prespecified hypothetical scenario DGPs."""
+    """Return nine hypothetical scenarios; I is H's complete-data twin."""
     base = ExperimentConfig(n_customers=n_customers, seed=seed)
     viable = dict(p_repeat_180_control=0.35, contribution_per_repeat=20.0,
                   intervention_cost_per_sent=0.35)
@@ -77,6 +77,9 @@ def scenario_matrix(*, n_customers: int = MIN_CAMPAIGN_CUSTOMERS,
             missing_effect_if_repeat=2.0,
             margin_resolution_follows_outcome=True, **viable),
     }
+    # The only DGP change from H to I is complete purchase-outcome ascertainment.
+    configs["I_complete_twin_below_hurdle"] = replace(
+        configs["H_mnar_below_commercial_hurdle"], outcome_missingness="complete")
     if tuple(configs) != SCENARIO_NAMES:
         raise RuntimeError("Scenario matrix order or membership changed unexpectedly")
     validate_scenario_matrix(configs)
@@ -84,6 +87,10 @@ def scenario_matrix(*, n_customers: int = MIN_CAMPAIGN_CUSTOMERS,
     if {k: v for k, v in asdict(b).items() if k != "effect_180_eligible"} != {
             k: v for k, v in asdict(g).items() if k != "effect_180_eligible"}:
         raise RuntimeError("B and G must differ only in their Day-180 eligible treatment effect")
+    h, i = configs["H_mnar_below_commercial_hurdle"], configs["I_complete_twin_below_hurdle"]
+    if {k: v for k, v in asdict(h).items() if k != "outcome_missingness"} != {
+            k: v for k, v in asdict(i).items() if k != "outcome_missingness"}:
+        raise RuntimeError("H and I must differ only in purchase-outcome ascertainment")
     return configs
 
 
@@ -167,6 +174,7 @@ def scenario_truth(config: ExperimentConfig, scenario_name: str | None = None,
         "F_positive_conversion_negative_margin": (False, False, False, "Conversion benefit cannot overcome negative contribution margin; adoption should be blocked commercially."),
         "G_purchase_acceleration": (True, False, True, "Day-90 adoption is plausible; the later margin gate should roll back because acceleration disappears."),
         "H_mnar_below_commercial_hurdle": (False, True, False, "True Day-90 margin is below the £0.50 hurdle, so adoption is not warranted. MNAR can pass outcome diagnostics and modestly inflate the resolved risk difference; a false provisional adoption is possible but not guaranteed. If it occurs, Day-180 margin is positive under the £0 threshold, so confirmation is not false by the Day-180 commercial rule."),
+        "I_complete_twin_below_hurdle": (False, True, False, "Complete ascertainment with H's same below-hurdle truth; false adoption remains possible from sampling variation under the unchanged commercial rule."),
     }
     expected = expectations.get(scenario_name or "", (None, None, None,
                 "No scenario-level expected decision class supplied."))
@@ -366,12 +374,136 @@ def _scenario_fingerprint(*, scenario: str, config: ExperimentConfig,
     })
 
 
+def _scenario_seed_sequences(seed: int) -> list[np.random.SeedSequence]:
+    """Create stable streams, deliberately pairing I with H via common random numbers."""
+    streams = np.random.SeedSequence(seed).spawn(len(SCENARIO_NAMES))
+    streams[SCENARIO_NAMES.index("I_complete_twin_below_hurdle")] = streams[
+        SCENARIO_NAMES.index("H_mnar_below_commercial_hurdle")]
+    return streams
+
+
+def campaign_configuration_fingerprint(
+    *, seed: int = FULL_CAMPAIGN_SEED,
+    n_customers: int = MIN_CAMPAIGN_CUSTOMERS,
+    replicates: int = DEFAULT_CAMPAIGN_REPLICATES,
+    margin_bootstrap_reps: int = 1000,
+) -> str:
+    """Return the code- and configuration-bound fingerprint without running trials."""
+    configs = scenario_matrix(n_customers=n_customers, seed=seed)
+    scenario_seeds = _scenario_seed_sequences(seed)
+    sensitivity = SensitivityRange(-0.10, 0.10, True,
+                                   "HYPOTHETICAL SYNTHETIC STRESS RANGE; NOT OWNER APPROVED")
+    decision_config = DecisionConfig()
+    return _hash_value({
+        "seed": seed, "n_customers": n_customers, "replicates": replicates,
+        "margin_bootstrap_reps": margin_bootstrap_reps,
+        "scenario_fingerprints": {
+            name: _scenario_fingerprint(
+                scenario=name, config=config, scenario_seed=scenario_seeds[i], seed=seed,
+                replicates=replicates, margin_bootstrap_reps=margin_bootstrap_reps,
+                sensitivity=sensitivity, decision_config=decision_config)
+            for i, (name, config) in enumerate(configs.items())},
+    })
+
+
+def _binary_probability(values: list[bool], *, mask: list[bool] | None = None) -> dict[str, Any]:
+    selected = ([bool(value) for value, keep in zip(values, mask) if keep]
+                if mask is not None else [bool(value) for value in values])
+    n = len(selected)
+    k = sum(selected)
+    p = k / n if n else None
+    if n:
+        from .core import wilson_interval
+        ci = list(wilson_interval(k, n))
+        mcse = float(np.sqrt(p * (1 - p) / n))
+    else:
+        ci, mcse = [None, None], None
+    return {"estimate": p, "mcse": mcse, "ci95_wilson": ci,
+            "numerator": k, "denominator": n}
+
+
+def _paired_binary_difference(h: list[bool], i: list[bool]) -> dict[str, Any]:
+    if len(h) != len(i) or not h:
+        raise ValueError("Paired comparison requires equally sized, non-empty replicate vectors")
+    differences = np.asarray(h, dtype=float) - np.asarray(i, dtype=float)
+    estimate = float(differences.mean())
+    mcse = float(differences.std(ddof=1) / np.sqrt(len(differences))) if len(differences) > 1 else None
+    # A conservative finite-sample interval avoids a misleading zero-width
+    # normal interval when a small pilot has no discordant pairs.
+    half = min(1.0, float(np.sqrt(2 * np.log(2 / 0.05) / len(differences))))
+    return {
+        "estimate_h_minus_i": estimate, "mcse_paired": mcse,
+        "ci95_conservative_hoeffding": [max(-1.0, estimate - half), min(1.0, estimate + half)],
+        "h_only_events": int(np.sum(differences > 0)),
+        "i_only_events": int(np.sum(differences < 0)),
+        "ties": int(np.sum(differences == 0)), "denominator_pairs": len(differences),
+        "method": "replicate-level paired difference; common random numbers",
+    }
+
+
+def summarize_h_i_comparison(h_rows: list[dict[str, Any]], i_rows: list[dict[str, Any]],
+                             decision_config: DecisionConfig = DecisionConfig()) -> dict[str, Any]:
+    """Compare H and I using matched replicate IDs and verified shared seed keys."""
+    h_by_id = {int(row["replicate_id"]): row for row in h_rows}
+    i_by_id = {int(row["replicate_id"]): row for row in i_rows}
+    if not h_rows or h_by_id.keys() != i_by_id.keys():
+        raise ValueError("H/I comparison requires identical non-empty replicate ID sets")
+    ids = sorted(h_by_id)
+    if any(h_by_id[k]["seed_key"] != i_by_id[k]["seed_key"] for k in ids):
+        raise ValueError("H/I rows do not share the pre-specified paired random stream")
+
+    def false_adoption(row: dict[str, Any]) -> bool:
+        return bool(row["day90_provisional"] and
+                    row["true_margin90_population"] < decision_config.min_margin_per_customer)
+
+    def false_d180(row: dict[str, Any]) -> bool:
+        return bool(row["day180_confirm"] and
+                    row["true_margin180_population"] < decision_config.min_margin_180_point)
+
+    def selected_metrics(rows: list[dict[str, Any]]) -> dict[str, Any]:
+        return {
+            "false_provisional_adoption": _binary_probability(
+                [false_adoption(r) for r in rows], mask=[
+                    r["true_margin90_population"] < decision_config.min_margin_per_customer for r in rows]),
+            "false_day180_confirmation": _binary_probability(
+                [false_d180(r) for r in rows], mask=[
+                    r["true_margin180_population"] < decision_config.min_margin_180_point for r in rows]),
+            "false_day180_confirmation_given_provisional_adoption": _binary_probability(
+                [false_d180(r) for r in rows], mask=[
+                    r["day90_provisional"] and
+                    r["true_margin180_population"] < decision_config.min_margin_180_point for r in rows]),
+            "primary_analysis_inconclusive": _binary_probability([r["primary_inconclusive"] for r in rows]),
+            "margin_gate_pass": _binary_probability([r["margin_gate_90"] == "PASS" for r in rows]),
+            "margin_gate_fail": _binary_probability([r["margin_gate_90"] == "FAIL" for r in rows]),
+            "margin_gate_inconclusive": _binary_probability([r["margin_gate_90"] == "INCONCLUSIVE" for r in rows]),
+            "financial_completeness_gate_not_pass": _binary_probability([r["margin_completeness_gate_90"] != "PASS" for r in rows]),
+            "complaint_guardrail_pass": _binary_probability([r["complaint_state"] == "PASS" for r in rows]),
+            "complaint_guardrail_fail": _binary_probability([r["complaint_state"] == "FAIL" for r in rows]),
+            "optout_guardrail_pass": _binary_probability([r["optout_state"] == "PASS" for r in rows]),
+            "optout_guardrail_fail": _binary_probability([r["optout_state"] == "FAIL" for r in rows]),
+            "both_guardrails_pass": _binary_probability([
+                r["complaint_state"] == "PASS" and r["optout_state"] == "PASS" for r in rows]),
+        }
+
+    h_false = [false_adoption(h_by_id[k]) for k in ids]
+    i_false = [false_adoption(i_by_id[k]) for k in ids]
+    return {
+        "label": "HYPOTHETICAL SYNTHETIC PAIRED COMPARISON; NOT BUSINESS EVIDENCE",
+        "comparison": "H minus I; identical randomised population and stochastic components, differing only in outcome ascertainment",
+        "pairing_verified": True, "replicate_ids": ids,
+        "H": selected_metrics([h_by_id[k] for k in ids]),
+        "I": selected_metrics([i_by_id[k] for k in ids]),
+        "false_provisional_adoption_h_minus_i": _paired_binary_difference(h_false, i_false),
+        "interpretation": "Synthetic within-generator contrast for the ascertainment mechanism; not a real-world causal estimate. Individual false adoptions can arise from chance under the unchanged decision rule.",
+    }
+
+
 def run_campaign(
     *, replicates: int = 20, n_customers: int = MIN_CAMPAIGN_CUSTOMERS,
     seed: int = FULL_CAMPAIGN_SEED, margin_bootstrap_reps: int = 1000,
     block_size: int = DEFAULT_BLOCK_SIZE, max_seconds: int = 180,
     scenario_timeout_seconds: int = 60, memory_limit_mib: int = 1536,
-    output_dir: str | Path = ".local/exp-sim-output/EXP-SIM-003D/smoke",
+    output_dir: str | Path = ".local/exp-sim-output/EXP-SIM-003E/smoke",
     resume: bool = False, allow_small_sample: bool = False,
 ) -> dict[str, Any]:
     global _ACTIVE_DEADLINE, _ACTIVE_MEMORY_CAP_BYTES
@@ -384,21 +516,13 @@ def run_campaign(
     _validate_memory_limit(memory_limit_mib)
     repo_root, out_dir = _campaign_root(output_dir)
     configs = scenario_matrix(n_customers=n_customers, seed=seed)
-    scenario_seeds = np.random.SeedSequence(seed).spawn(len(SCENARIO_NAMES))
+    scenario_seeds = _scenario_seed_sequences(seed)
     sensitivity = SensitivityRange(-0.10, 0.10, True,
                                   "HYPOTHETICAL SYNTHETIC STRESS RANGE; NOT OWNER APPROVED")
     decision_config = DecisionConfig()
-    campaign_fingerprint = _hash_value({
-        "seed": seed, "n_customers": n_customers, "replicates": replicates,
-        "margin_bootstrap_reps": margin_bootstrap_reps,
-        "scenario_fingerprints": {
-            name: _scenario_fingerprint(scenario=name, config=config,
-                                        scenario_seed=scenario_seeds[i], seed=seed,
-                                        replicates=replicates,
-                                        margin_bootstrap_reps=margin_bootstrap_reps,
-                                        sensitivity=sensitivity, decision_config=decision_config)
-            for i, (name, config) in enumerate(configs.items())},
-    })
+    campaign_fingerprint = campaign_configuration_fingerprint(
+        seed=seed, n_customers=n_customers, replicates=replicates,
+        margin_bootstrap_reps=margin_bootstrap_reps)
     manifest_path = out_dir / "campaign-manifest.json"
     if manifest_path.exists():
         if not resume:
@@ -423,7 +547,7 @@ def run_campaign(
     manifest: dict[str, Any] = {
         "label": "HYPOTHETICAL SYNTHETIC CAMPAIGN; NOT BUSINESS EVIDENCE",
         "status": "RUNNING", "configuration_fingerprint": campaign_fingerprint,
-        "seed": seed, "seed_scheme": f"SeedSequence(campaign seed).spawn({len(SCENARIO_NAMES)}), then stable replicate-ID child keys",
+        "seed": seed, "seed_scheme": (f"SeedSequence(campaign seed).spawn({len(SCENARIO_NAMES)}); I reuses H's scenario key for paired common random numbers; stable replicate-ID child keys"),
         "replicates_per_scenario": replicates, "customers_per_replicate": n_customers,
         "small_sample_override_flag_supplied": bool(allow_small_sample),
         "sample_size_below_assurance_minimum": n_customers < MIN_CAMPAIGN_CUSTOMERS,
@@ -432,6 +556,8 @@ def run_campaign(
         "memory_limit_mib_sampled_peak_rss": memory_limit_mib,
         "max_wall_seconds": max_seconds, "scenario_timeout_seconds": scenario_timeout_seconds,
         "sensitivity_range": asdict(sensitivity), "day180_independent_replication": False,
+        "paired_scenarios": {"H_mnar_below_commercial_hurdle": "shared stochastic scenario stream with I",
+                             "I_complete_twin_below_hurdle": "paired to H; only outcome ascertainment differs"},
         "scenarios": {},
     }
     if resume and manifest_path.exists():
@@ -567,6 +693,37 @@ def run_campaign(
     manifest["status"] = stop_status or ("COMPLETE" if len(manifest["scenarios"]) == len(configs)
                                          and all(v.get("status") == "COMPLETE" for v in manifest["scenarios"].values())
                                          else "INCOMPLETE")
+    if manifest["status"] == "COMPLETE":
+        h_name, i_name = "H_mnar_below_commercial_hurdle", "I_complete_twin_below_hurdle"
+        h_idx, i_idx = SCENARIO_NAMES.index(h_name), SCENARIO_NAMES.index(i_name)
+        h_fp = _scenario_fingerprint(
+            scenario=h_name, config=configs[h_name], scenario_seed=scenario_seeds[h_idx], seed=seed,
+            replicates=replicates, margin_bootstrap_reps=margin_bootstrap_reps,
+            sensitivity=sensitivity, decision_config=decision_config)
+        i_fp = _scenario_fingerprint(
+            scenario=i_name, config=configs[i_name], scenario_seed=scenario_seeds[i_idx], seed=seed,
+            replicates=replicates, margin_bootstrap_reps=margin_bootstrap_reps,
+            sensitivity=sensitivity, decision_config=decision_config)
+        h_rows, _ = _read_blocks(out_dir / h_name, scenario=h_name,
+                                 fingerprint=h_fp,
+                                 replicates=replicates)
+        i_rows, _ = _read_blocks(out_dir / i_name, scenario=i_name,
+                                 fingerprint=i_fp,
+                                 replicates=replicates)
+        comparison = summarize_h_i_comparison(
+            [h_rows[k] for k in range(replicates)], [i_rows[k] for k in range(replicates)],
+            decision_config=decision_config)
+        comparison["campaign_configuration_fingerprint"] = campaign_fingerprint
+        comparison["seed"] = seed
+        comparison_path = out_dir / "comparisons" / "H_vs_I.json"
+        if not comparison_path.resolve().is_relative_to(out_dir.resolve()):
+            raise ValueError("Unsafe H/I comparison output path")
+        _atomic_json(comparison, comparison_path)
+        manifest["H_I_comparison"] = {
+            "path": str(comparison_path.relative_to(repo_root)),
+            "pairing_verified": comparison["pairing_verified"],
+            "false_provisional_adoption_h_minus_i": comparison["false_provisional_adoption_h_minus_i"],
+        }
     manifest["elapsed_seconds_this_invocation"] = time.monotonic() - started
     manifest["peak_process_rss_mib"] = _peak_rss_mib()
     manifest["smoke_results_are_not_precise_operating_characteristics"] = replicates < 5000
@@ -584,7 +741,7 @@ def main() -> None:
     parser.add_argument("--max-seconds", type=int, default=180)
     parser.add_argument("--scenario-timeout-seconds", type=int, default=60)
     parser.add_argument("--memory-limit-mib", type=int, default=1536)
-    parser.add_argument("--output-dir", default=".local/exp-sim-output/EXP-SIM-003D/smoke")
+    parser.add_argument("--output-dir", default=".local/exp-sim-output/EXP-SIM-003E/smoke")
     parser.add_argument("--resume", action="store_true", help="Resume only from matching intact replicate blocks")
     parser.add_argument("--allow-small-sample", action="store_true", help="Allow <25k only for explicitly bounded smoke runs")
     args = parser.parse_args()

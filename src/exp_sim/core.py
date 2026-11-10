@@ -815,6 +815,8 @@ def summarize_replicate_results(
         "optout_guardrail_pass": _probability_metric((df.optout_state == "PASS").tolist()),
         "optout_guardrail_inconclusive": _probability_metric((df.optout_state == "INCONCLUSIVE").tolist()),
         "optout_guardrail_fail": _probability_metric(df.optout_fail.tolist()),
+        "joint_guardrail_pass": _probability_metric(
+            ((df.complaint_state == "PASS") & (df.optout_state == "PASS")).tolist()),
         "any_guardrail_inconclusive": _probability_metric(df.any_guardrail_inconclusive.tolist()),
         "sensitivity_robust": _probability_metric((df.sensitivity_state == "ROBUST").tolist()),
         "ci_coverage_conditional_on_defined": _probability_metric(df.covers_truth.tolist(), denominator_mask=df.primary_defined.tolist()),
