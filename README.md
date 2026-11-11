@@ -1,102 +1,92 @@
-# Commercial Data Science & Customer Intelligence
+# Commercial Retention Analytics
 
-A reproducible research-engineering repository for retail transaction analysis, customer purchase measurement, and commercial data validation. It combines earlier exploratory analytics code with a newer, evidence-led corrected-data workstream. The two workstreams have different data definitions and should not be read as one interchangeable set of results.
+A reproducible customer-behaviour and commercial analytics case study using corrected UCI Online Retail II transaction data. It asks: **How can a retailer understand repeat purchasing, customer concentration and observed customer activity without mistaking incomplete follow-up for churn?**
 
-## Current status
+The corrected-V2 analysis is complete and independently reviewed. It links audited transaction rows to validated purchase occasions, censoring-aware outcomes and aggregate results. Earlier models, SQL/dbt work and dashboards are separate exploratory work.
 
-**COMMERCIAL-DS-003 B2B-1 implementation is complete; independent re-review is pending.** Stage B2A source integrity, taxonomy, revenue reconciliation, and purchase occasions were independently reviewed. The subsequent B2B-1 trust-boundary correction has been self-verified by Codex and is awaiting Claude Code re-review. Stage B2B downstream analytics have not started.
+## What I built
 
-## Research and engineering objectives
+- Audited source duplication and removed only the reviewed overlap block, with pinned inputs, taxonomy validation and row/value reconciliation.
+- Built validated customer metrics, purchase occasions, maturity-aware repeat outcomes and first-observed cohorts.
+- Analysed gross concentration, an unlinked signed merchandise sensitivity and six descriptive customer groups.
+- Added deterministic reconciliation, 15 focused tests and a reproducible aggregate report with four figures.
 
-- Establish source lineage and reproducible transaction corrections.
-- Separate merchandise, returns, shipping, manual entries, fees, and administrative activity.
-- Define customer purchase occasions with explicit eligibility and temporal rules.
-- Reconcile signed transaction-line amounts exactly and preserve customer attribution.
-- Keep exploratory modelling and simulated experiments distinct from causal evidence.
+## Verified findings
 
-## Data provenance and scope
+- **5,852** identifiable qualifying customers; **36,594** customer-by-invoice occasions from **788,127** qualifying merchandise lines.
+- **£17,123,740.997** identified qualifying gross merchandise.
+- The top **586** customers contribute **63.8114%** of identified qualifying gross.
+- **5,256** customers have mature 90-day follow-up; **596** have insufficient follow-up. Repeat results are reported by first-observed month and pre-/on-or-after-2010-12-01 population, with each stratum’s repeat numerator and mature denominator. **No pooled 90-day repeat rate is headlined.**
+- Among customers with repeat observed purchase days, **2,123** whose last observed purchase was within 59 days of the partial 2011-12-09 data end account for **73.99%** of identified qualifying gross. This is a retrospective description of observed activity, not a prediction or targeting result.
+- **£16,410,709.747** unlinked signed merchandise-line sensitivity across 5,875 identified customers, including 23 returns-only customers. It combines qualifying gross and identified merchandise returns/cancellations, which are not linked to original invoices; it is not accounting net sales or profit.
 
-The analyses use the UCI **Online Retail** and **Online Retail II** transaction datasets, donated by Daqing Chen. The UCI pages identify both datasets as **Creative Commons Attribution 4.0 International (CC BY 4.0)** and provide the recommended citations: [Online Retail](https://archive.ics.uci.edu/dataset/352/online+retail), DOI [10.24432/C5BW33](https://doi.org/10.24432/C5BW33); [Online Retail II](https://archive.ics.uci.edu/dataset/502/online+retail+ii), DOI [10.24432/C5CG6D](https://doi.org/10.24432/C5CG6D). See [data provenance and attribution](docs/DATA_PROVENANCE.md).
+Other positive merchandise of £2,575,930.130 is not attributable to an identified customer in the source reconciliation, excluded from customer measures and not allocated. See the [scientific results report](reports/corrected_v2/corrected_v2_scientific_results.md) for definitions and full monthly results.
+Qualifying gross is a merchandise measure, not recognized accounting revenue, margin or profit.
 
-The raw files are not tracked in Git. Local reproduction expects `data/raw/Online Retail.xlsx` and `data/raw/online_retail_II.csv`; SHA-256 values and the CSV conversion provenance limitation are documented in the data guide. The UCI source includes pseudonymous customer identifiers and transaction details. Avoid adding row-level customer outputs, raw extracts, model artifacts, or local databases to Git.
+## Visual findings
 
-## Verified corrected-V2 findings
+All charts use aggregate corrected-V2 results. Gray cohort cells are incomplete or unobserved, not zero.
 
-These results describe the corrected V2 definition documented in the [contract specification](docs/recovery/COMMERCIAL_DS_002B_CONTRACT_SPECIFICATION.md), not the earlier V1 notebooks.
+**Mature 90-day repeat conversion** — monthly strata are separated by first-observed population; the plot shows mature denominators and marks partial September follow-up.
 
-| Measure | Verified value | Definition |
-|---|---:|---|
-| Raw V2 rows | 1,067,371 | Source CSV data rows |
-| Overlap rows removed | 22,523 | The reviewed V1/V2 duplicate block only |
-| Corrected-V2 rows | 1,044,848 | Corrected source rows, retaining incidental exact repeats |
-| Qualifying purchase occasions | 36,594 | Customer-by-invoice groups with qualifying positive merchandise lines |
-| Customers with qualifying occasions | 5,852 | Distinct identified customers in those occasions |
-| Qualifying gross merchandise | GBP 17,123,740.997 | Exact Decimal sum of qualifying positive merchandise line values |
-| Full signed transaction-line value | GBP 18,909,762.118 | Signed quantity × unit price across all 16 bridge categories |
-| Identifiable signed amount | GBP 16,343,669.038 | Signed value on rows with a customer identifier |
-| Unattributed signed amount | GBP 2,566,093.08 | Signed value on rows without a customer identifier |
-| Positive unattributed merchandise activity | GBP 2,575,930.13 | Positive merchandise rows that cannot enter customer-level purchase occasions |
+![Mature second-purchase conversion by first-observed population](reports/corrected_v2/figures/fig01_mature_90d_repeat_by_month.svg)
 
-Signed transaction-line value is an exact line reconciliation, not recognised accounting revenue or profit. Qualifying gross merchandise is a narrower measure: it excludes returns and non-merchandise categories and requires positive quantity, positive unit price, an identified customer, a valid timestamp and invoice, and a non-cancellation invoice. Unattributed commercial activity remains in the full reconciliation but cannot be assigned to customer behaviour.
+**First-observed cohort activity** — month 0 is cohort entry, not repeat retention; later activity is shown only for complete calendar months.
 
-A **purchase occasion** groups eligible merchandise lines by customer and invoice. It is distinct from a transaction line, invoice count across all categories, or a customer-day repeat count.
+![Maturity-aware first-observed cohort activity](reports/corrected_v2/figures/fig02_first_observed_cohort_activity.svg)
 
-The Stage B2A review reproduced 2,532 customers with a later-day repeat and 2,673 under invoice-level sensitivity. These are descriptive counts over 5,852 occasion customers without a maturity-filtered denominator; they are **not retention rates**. Acquisition-proxy diagnostics (1,613, 1,602, and 1,601 customers under alternative screens) remain unapproved diagnostics, not a published acquisition cohort.
+**Qualifying gross concentration** — customer ranking uses identified qualifying gross; unattributed merchandise is disclosed outside the denominator.
 
-## Implemented capabilities
+![Top-decile share of identified qualifying gross merchandise](reports/corrected_v2/figures/fig03_qualifying_gross_concentration.svg)
 
-- Earlier V1/V2 cleaning, cohort, segmentation, CRM prioritisation, model, SQL/dbt, Spark, and dashboard code is present. Those artifacts are historical exploratory work; no legacy model-performance result is adopted as corrected-V2 evidence, and the current work has not independently validated every older output or operational recommendation.
-- The corrected-V2 workstream has a pinned source correction, reviewed taxonomy, 16-category signed bridge, purchase-occasion builder, frozen integrity references, and adversarial validation tests.
-- The current B2B-1 correction recomputes source, classification, and customer fingerprints from consumed rows, then checks frozen category values and source-row membership.
+**Descriptive frequency × recency groups** — six mutually exclusive groups, not churn predictions or CRM recommendations.
 
-## Reproduction
+![Six descriptive purchase-frequency and recency groups](reports/corrected_v2/figures/fig04_descriptive_frequency_recency_segments.svg)
 
-Use Python 3.11. A lightweight, data-free validation path is:
+## Method and implementation
 
-```bash
+The corrected source removes only the reviewed 22,523-row overlap block between Online Retail and Online Retail II, retaining other repeated rows. Reference hashes validate the corrected source, taxonomy, qualifying occasions and signed-line reconciliation. A purchase occasion groups qualifying positive merchandise lines by identified customer and invoice; distinct purchase days remain separate from invoice counts.
+
+A 90-day repeat requires a qualifying purchase on a strictly later date within the half-open window. Only customers with a complete follow-up window enter the denominator; immature outcomes remain unknown. Cohorts use first-observed month, not acquisition date, and only fully observed calendar activity months are counted. The last complete month is November 2011.
+
+Customer concentration uses exact Decimal qualifying gross. The separate signed sensitivity adds identified merchandise returns/cancellations without invoice matching. Descriptive segments cross purchase-day frequency with recency as of the partial 2011-12-09 source end. None of these first-observed, recency or segment labels establishes acquisition, churn risk or treatment eligibility.
+
+The current corrected-V2 path is **Python 3.11 and pandas**, with Decimal monetary reconciliation, pinned references and deterministic validation. Fifteen focused tests cover metrics, censoring, reconciliation and segments. `make validate-ci` provides a separate data-free validation path. Older SQL, DuckDB/dbt, Spark, notebook and static dashboard artifacts are not the corrected-V2 execution path. No Tableau deployment, production service, executed CRM campaign or deployed AI system is claimed.
+
+A separate synthetic experiment-decision simulation is not based on these customer observations and does not establish campaign effectiveness or causal uplift.
+
+## Reproduce
+
+To render the report and four figures from verified aggregate outputs, run from the repository root:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python docs/recovery/COMMERCIAL_DS_007D_PACKAGE.py \
+  --input-dir data/processed/corrected_v2_customer_analytics \
+  --output-dir reports/corrected_v2
+```
+
+To rebuild those aggregates, first obtain the exact pinned files `data/raw/Online Retail.xlsx` and `data/raw/online_retail_II.csv`; raw files are not in Git. Verify hashes in [data provenance](docs/DATA_PROVENANCE.md), set up the supported environment, and run:
+
+```sh
 python3.11 -m venv .venv
 .venv/bin/python -m pip install -r requirements-minimal.txt
-make validate-ci
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python docs/recovery/COMMERCIAL_DS_007B_CUSTOMER_ANALYTICS.py
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python docs/recovery/COMMERCIAL_DS_007C_VALUE_SEGMENTS.py
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python docs/recovery/COMMERCIAL_DS_007D_PACKAGE.py --input-dir data/processed/corrected_v2_customer_analytics --output-dir reports/corrected_v2
 ```
 
-The local corrected-V2 evidence path requires the two raw files named above and verifies their hashes before analysis:
+The exact Online Retail II CSV acquisition/conversion is not packaged as a script; a different conversion may not match the pinned input. See the [results reproduction guide](reports/corrected_v2/README.md) for aggregate schemas and source commits. Customer-level outputs stay under ignored `data/processed/`.
 
-```bash
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python docs/recovery/COMMERCIAL_DS_002B_INTEGRATION.py
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s docs/recovery -p 'test_COMMERCIAL_DS_*.py' -v
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python docs/recovery/COMMERCIAL_DS_003_PURCHASE_OCCASIONS.py
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python docs/recovery/COMMERCIAL_DS_003_REVENUE_BRIDGE.py
-```
+## Limitations
 
-The recovery suite exercises real data and takes several minutes. `make validate-ci` runs lightweight tests, local Markdown link checks, and synthetic end-to-end checks; it does not claim the real-data recovery suite passed. See [reproduction instructions](docs/REPRODUCIBILITY.md).
+This is observational data from December 2009 through a partial December 9, 2011. Earlier customer history is left-censored; incomplete follow-up is handled explicitly. First-observed customers are not verified acquisitions. Unattributed activity is excluded from customer attribution, and returns/cancellations are unlinked. Segments are descriptive, not validated churn states. The inclusive 0–30-day recent-first-observed flag is a descriptive convention, not a validated CRM threshold or predictive feature. CRM intervention ideas remain proposed; no CRM experiment was executed.
 
 ## Repository map
 
-| Path | Contents |
-|---|---|
-| `src/`, `tests/` | Earlier reusable analytics code and lightweight regression tests |
-| `notebooks/` | Exploratory analysis and model notebooks |
-| `dbt/`, `sql/` | SQL transformations, marts, and data-quality tests |
-| `dashboards/`, `reports/` | Historical V1 reports, simulation scenarios, CRM proposals, and dashboard views are labeled exploratory and not deployment evidence |
-| `data/bi_exports/` | Historical aggregate exports are excluded from the proposed release tree; regenerate only under a reviewed analysis contract |
-| `docs/` | User-facing technical, methodology, and reproduction documentation |
-| `docs/recovery/` | Source audits, decisions, contract, frozen references, verification, and independent reviews |
-| `data/raw/`, `data/processed/`, `data/warehouse/` | Local inputs and generated data; ignored by Git |
+- `docs/recovery/` — validated source, occasion and bridge contracts; customer-metric and segment scripts with tests; results-package builder.
+- `reports/corrected_v2/` — scientific report, reproduction guide and four SVG charts.
+- `docs/DATA_PROVENANCE.md` — source attribution and integrity pins.
+- `reports/corrected_v2/README.md` — current results-package reproduction guide.
+- `src/`, `sql/`, `dbt/`, `notebooks/`, `dashboards/` — earlier or exploratory components, not corrected-V2 results.
 
-## Scientific limitations and interpretation
-
-- The source is left-censored; no observed first purchase proves true acquisition.
-- The data does not include margin, campaign exposure, channel, or demographic features. It cannot establish causal marketing impact.
-- Cancellation and return values are reconciled as observed lines; credits are not linked to specific original invoices.
-- Earlier model and experiment outputs are not evidence of deployment or causal effect. The simulated experiment is not a randomized trial.
-- Current B2B-1 integrity checks have not yet received the pending independent re-review.
-- Original project code is licensed under MIT; see [LICENSE](LICENSE). The MIT license does not apply to UCI datasets or third-party dependencies, which retain their own terms.
-
-## Documentation
-
-- [Research status](docs/RESEARCH_STATUS.md)
-- [Documentation index](docs/index.md)
-- [Data provenance](docs/DATA_PROVENANCE.md)
-- [Reproducibility](docs/REPRODUCIBILITY.md)
-- [B2B-1 integrity closure handover](docs/recovery/COMMERCIAL_DS_003_STAGE_B2A_INTEGRITY_CLOSURE_HANDOVER.md)
-- [Full recovery evidence index](docs/recovery/README.md)
+UCI Online Retail and Online Retail II datasets are attributed under CC BY 4.0; see [data provenance and attribution](docs/DATA_PROVENANCE.md). Project code is MIT-licensed; dataset and dependency terms are separate.
