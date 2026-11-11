@@ -32,14 +32,4 @@ logs/
 .env.*
 !.env.example
 
-# B2B-3 synthetic-only test artifacts; never store real customer data here.
-.local/b2b3-gate-synthetic/
-# Private aggregate candidates and evidence; do not stage or publish.
-.local/b2b3-gate-output/
-# Private B2B-3 outcome candidates and execution evidence; not approved for publication.
-.local/b2b3-outcome-output/
-
-# Private prospective experiment design drafts; never stage or publish.
-.local/exp-design-output/
-# Synthetic CRM experiment outputs only; no customer or source data.
-.local/exp-sim-output/
+.local/

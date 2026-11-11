@@ -2,7 +2,7 @@
 
 A reproducible customer-behaviour and commercial analytics case study using corrected UCI Online Retail II transaction data. It asks: **How can a retailer understand repeat purchasing, customer concentration and observed customer activity without mistaking incomplete follow-up for churn?**
 
-The corrected-V2 analysis is complete and independently reviewed. It links audited transaction rows to validated purchase occasions, censoring-aware outcomes and aggregate results. Earlier models, SQL/dbt work and dashboards are separate exploratory work.
+The corrected-V2 analysis is complete and independently reviewed. It links audited transaction rows to validated purchase occasions, censoring-aware outcomes and aggregate results. Earlier exploratory models, SQL/dbt work and dashboards are not part of this release.
 
 ## What I built
 
@@ -51,9 +51,7 @@ A 90-day repeat requires a qualifying purchase on a strictly later date within t
 
 Customer concentration uses exact Decimal qualifying gross. The separate signed sensitivity adds identified merchandise returns/cancellations without invoice matching. Descriptive segments cross purchase-day frequency with recency as of the partial 2011-12-09 source end. None of these first-observed, recency or segment labels establishes acquisition, churn risk or treatment eligibility.
 
-The current corrected-V2 path is **Python 3.11 and pandas**, with Decimal monetary reconciliation, pinned references and deterministic validation. Fifteen focused tests cover metrics, censoring, reconciliation and segments. `make validate-ci` provides a separate data-free validation path. Older SQL, DuckDB/dbt, Spark, notebook and static dashboard artifacts are not the corrected-V2 execution path. No Tableau deployment, production service, executed CRM campaign or deployed AI system is claimed.
-
-A separate synthetic experiment-decision simulation is not based on these customer observations and does not establish campaign effectiveness or causal uplift.
+The current corrected-V2 path is **Python 3.11 and pandas**, with Decimal monetary reconciliation, pinned references and deterministic validation. Fifteen focused tests cover metrics, censoring, reconciliation and segments; run them without raw data using `.venv/bin/python -m unittest discover -s docs/recovery -p 'test_COMMERCIAL_DS_007*.py'`. Earlier exploratory SQL/dbt, Spark, notebook and dashboard work is not included in this repository. No Tableau deployment, production service, executed CRM campaign or deployed AI system is claimed.
 
 ## Reproduce
 
@@ -87,6 +85,5 @@ This is observational data from December 2009 through a partial December 9, 2011
 - `reports/corrected_v2/` — scientific report, reproduction guide and four SVG charts.
 - `docs/DATA_PROVENANCE.md` — source attribution and integrity pins.
 - `reports/corrected_v2/README.md` — current results-package reproduction guide.
-- `src/`, `sql/`, `dbt/`, `notebooks/`, `dashboards/` — earlier or exploratory components, not corrected-V2 results.
 
 UCI Online Retail and Online Retail II datasets are attributed under CC BY 4.0; see [data provenance and attribution](docs/DATA_PROVENANCE.md). Project code is MIT-licensed; dataset and dependency terms are separate.
