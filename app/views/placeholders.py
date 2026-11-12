@@ -12,17 +12,6 @@ def _placeholder(title: str, question: str, evidence: str, planned: str, scope: 
     st.markdown(f"**Planned scope:** {scope}")
 
 
-def render_purchase_propensity() -> None:
-    _placeholder(
-        "Purchase Propensity",
-        "How well did historical purchase behaviour rank future purchasers?",
-        "Historical prediction",
-        "a later M5 milestone (proposed M5-003)",
-        "Day-21 new-customer result (M1) shown separately from the established-customer models (M2), "
-        "with monthly holdout performance and the exploratory calibration result.",
-    )
-
-
 def render_targeting_explorer() -> None:
     _placeholder(
         "Targeting Explorer",

@@ -16,9 +16,9 @@ for path in (APP_DIR, ROOT / "src"):
         sys.path.insert(0, str(path))
 
 from views.customer_overview import render as render_customer_overview  # noqa: E402
+from views.purchase_propensity import render as render_purchase_propensity  # noqa: E402
 from views.placeholders import (  # noqa: E402
     render_experiment_feasibility,
-    render_purchase_propensity,
     render_targeting_explorer,
 )
 

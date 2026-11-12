@@ -65,8 +65,7 @@ class DashboardAppTests(unittest.TestCase):
 
             getattr(placeholders, function_name)()
 
-        for function_name, title in (("render_purchase_propensity", "Purchase Propensity"),
-                                     ("render_targeting_explorer", "Targeting Explorer"),
+        for function_name, title in (("render_targeting_explorer", "Targeting Explorer"),
                                      ("render_experiment_feasibility", "Experiment Feasibility")):
             app = AppTest.from_function(placeholder_script, args=(function_name,), default_timeout=60)
             app.run()
