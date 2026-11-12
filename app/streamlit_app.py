@@ -17,10 +17,8 @@ for path in (APP_DIR, ROOT / "src"):
 
 from views.customer_overview import render as render_customer_overview  # noqa: E402
 from views.purchase_propensity import render as render_purchase_propensity  # noqa: E402
-from views.placeholders import (  # noqa: E402
-    render_experiment_feasibility,
-    render_targeting_explorer,
-)
+from views.placeholders import render_targeting_explorer  # noqa: E402
+from views.experiment_feasibility import render as render_experiment_feasibility  # noqa: E402
 
 PAGES = [
     st.Page(render_customer_overview, title="Customer Overview", url_path="customer-overview", default=True),

@@ -53,25 +53,6 @@ class DashboardAppTests(unittest.TestCase):
         self.assertIn("st.navigation(PAGES)", source)
         self.assertFalse(app.exception)
 
-    def test_placeholder_pages_render(self) -> None:
-        from streamlit.testing.v1 import AppTest
-
-        def placeholder_script(function_name: str) -> None:
-            import sys
-            from pathlib import Path
-
-            sys.path.insert(0, str(Path.cwd() / "app"))
-            from views import placeholders
-
-            getattr(placeholders, function_name)()
-
-        for function_name, title in (("render_experiment_feasibility", "Experiment Feasibility"),):
-            app = AppTest.from_function(placeholder_script, args=(function_name,), default_timeout=60)
-            app.run()
-            self.assertFalse(app.exception, function_name)
-            self.assertEqual(app.title[0].value, title)
-            self.assertIn("Planned for", app.info[0].value)
-
     def test_missing_bundle_shows_error_instead_of_failing(self) -> None:
         previous = os.environ.get("CUSTOMER_OVERVIEW_BUNDLE")
         os.environ["CUSTOMER_OVERVIEW_BUNDLE"] = str(ROOT / "app_data/missing_bundle.json")

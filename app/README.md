@@ -1,6 +1,6 @@
 # Customer Intelligence & Decision Support (local Streamlit app)
 
-A four-page research exhibit. **Customer Overview**, **Purchase Propensity** and **Targeting Explorer** are implemented; Experiment Feasibility remains a placeholder.
+A four-page research exhibit. **Customer Overview**, **Purchase Propensity**, **Targeting Explorer** and **CRM Experiment Feasibility** are implemented.
 
 ## Run
 
@@ -12,12 +12,12 @@ python3.11 -m venv .venv
 .venv/bin/streamlit run app/streamlit_app.py
 ```
 
-At runtime the app reads only the tracked aggregate bundles `app_data/customer_overview_v1.json`, `app_data/propensity_summary_v1.json` and `app_data/targeting_v1.json`. It needs no raw UCI files, `data/processed/` outputs, row-level predictions or customer-level data. If a bundle is missing or fails validation, its page shows a controlled error instead of figures.
+At runtime the first three pages read only their tracked aggregate bundles `app_data/customer_overview_v1.json`, `app_data/propensity_summary_v1.json` and `app_data/targeting_v1.json`. CRM Experiment Feasibility calculates explicitly hypothetical scenarios in memory with the existing M4 functions. The app needs no raw UCI files, `data/processed/` outputs, row-level predictions or customer-level data.
 
 ## Tests
 
 ```sh
-.venv/bin/python -m unittest tests.test_customer_overview_bundle tests.test_dashboard_app tests.test_propensity_summary_bundle tests.test_purchase_propensity_page tests.test_targeting_bundle -v
+.venv/bin/python -m unittest tests.test_customer_overview_bundle tests.test_dashboard_app tests.test_propensity_summary_bundle tests.test_purchase_propensity_page tests.test_targeting_bundle tests.test_experiment_feasibility_page tests.test_crm_pilot_feasibility -v
 ```
 
 ## Rebuilding the bundle (one-time research step, maintainers only)
@@ -56,3 +56,7 @@ Use only the final frozen M3-002 aggregate JSON. The builder verifies its approv
 ```
 
 The loader pins the aggregate source and canonical content hashes independently. The app displays the three evaluated capacities only.
+
+## CRM Experiment Feasibility
+
+This page does not use a data bundle. Its inputs are visibly hypothetical and its calculations reuse `allocate_enrollment`, `mean_difference_mde`, `commercial_scenarios` and `capacity_sensitivity` from `src/crm_pilot_feasibility.py`. The default scenario follows the M4 primary 10% total-enrollment design, 1:1 allocation, two-sided α=0.05 and 80% power. Changing capacity is shown as a sensitivity scenario and may change the target population and estimand. No experiment, treatment effect, eligible count, margin variance or campaign cost is inferred from the historical data.

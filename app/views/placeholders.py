@@ -10,14 +10,6 @@ from targeting_bundle import BundleError, DEFAULT_BUNDLE_PATH, load_bundle
 from targeting_metrics import policy_comparison, pairwise_comparison
 
 
-def _placeholder(title: str, question: str, evidence: str, planned: str, scope: str) -> None:
-    st.title(title)
-    st.caption(f"Evidence type: {evidence}")
-    st.info(f"Planned for {planned}. This page is not implemented yet.")
-    st.markdown(f"**Question this page will answer:** {question}")
-    st.markdown(f"**Planned scope:** {scope}")
-
-
 def render_targeting_explorer() -> None:
     st.title("CRM Targeting Explorer")
     path=os.environ.get("TARGETING_BUNDLE", str(DEFAULT_BUNDLE_PATH))
@@ -58,13 +50,3 @@ def render_targeting_explorer() -> None:
         st.markdown("Policies: **Model C** frozen 11-feature logistic regression; **Model B (RFM)** frozen RFM logistic regression; **365-day frequency** qualifying purchase-date count; **random benchmark** analytical uniform-selection expectation, with no random list drawn. Outcome: any qualifying purchase in the next 30 days.")
         st.markdown(f"Sources: `{bundle['provenance']['source_documents']['results']}` and `{bundle['provenance']['source_documents']['independent_review']}`. Aggregate source SHA-256: `{bundle['provenance']['source_aggregate_sha256']}`. Bundle content SHA-256: `{bundle['content_sha256']}`.")
         st.caption(bundle["definitions"]["bootstrap"]["limitations"])
-
-
-def render_experiment_feasibility() -> None:
-    _placeholder(
-        "Experiment Feasibility",
-        "What sample size and economics might a future randomised CRM pilot need?",
-        "Hypothetical scenario",
-        "a later M5 milestone (proposed M5-005)",
-        "Interactive inputs wired to the existing M4 scenario functions; every input labelled as an assumption.",
-    )
