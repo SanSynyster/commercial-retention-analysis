@@ -1,6 +1,6 @@
 # Customer Intelligence & Decision Support (local Streamlit app)
 
-A four-page research exhibit. **Customer Overview** and **Purchase Propensity** are implemented; Targeting Explorer and Experiment Feasibility remain placeholders.
+A four-page research exhibit. **Customer Overview**, **Purchase Propensity** and **Targeting Explorer** are implemented; Experiment Feasibility remains a placeholder.
 
 ## Run
 
@@ -12,12 +12,12 @@ python3.11 -m venv .venv
 .venv/bin/streamlit run app/streamlit_app.py
 ```
 
-At runtime the app reads only the tracked aggregate bundles `app_data/customer_overview_v1.json` and `app_data/propensity_summary_v1.json`. It needs no raw UCI files, `data/processed/` outputs, row-level predictions or customer-level data. If a bundle is missing or fails validation, its page shows a controlled error instead of figures.
+At runtime the app reads only the tracked aggregate bundles `app_data/customer_overview_v1.json`, `app_data/propensity_summary_v1.json` and `app_data/targeting_v1.json`. It needs no raw UCI files, `data/processed/` outputs, row-level predictions or customer-level data. If a bundle is missing or fails validation, its page shows a controlled error instead of figures.
 
 ## Tests
 
 ```sh
-.venv/bin/python -m unittest tests.test_customer_overview_bundle tests.test_dashboard_app tests.test_propensity_summary_bundle tests.test_purchase_propensity_page -v
+.venv/bin/python -m unittest tests.test_customer_overview_bundle tests.test_dashboard_app tests.test_propensity_summary_bundle tests.test_purchase_propensity_page tests.test_targeting_bundle -v
 ```
 
 ## Rebuilding the bundle (one-time research step, maintainers only)
@@ -44,3 +44,15 @@ The propensity bundle builder reads only the frozen M2 aggregate run manifest an
 ```
 
 The propensity bundle has an independent application-side content hash pin. A changed research source is rejected for deliberate review rather than silently substituted. The dashboard does not read prediction Parquets or model artifacts.
+
+## Rebuilding CRM Targeting Explorer summary (maintainers only)
+
+Use only the final frozen M3-002 aggregate JSON. The builder verifies its approved aggregate hash and exports allowlisted metrics; it does not read customer-level selections.
+
+```sh
+.venv/bin/python src/targeting_bundle.py \
+  ../source_data/uci_online_retail_ii/m3_002_targeting_outputs_final/m3_002_targeting_aggregate.json \
+  --output app_data/targeting_v1.json
+```
+
+The loader pins the aggregate source and canonical content hashes independently. The app displays the three evaluated capacities only.

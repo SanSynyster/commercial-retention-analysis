@@ -65,8 +65,7 @@ class DashboardAppTests(unittest.TestCase):
 
             getattr(placeholders, function_name)()
 
-        for function_name, title in (("render_targeting_explorer", "Targeting Explorer"),
-                                     ("render_experiment_feasibility", "Experiment Feasibility")):
+        for function_name, title in (("render_experiment_feasibility", "Experiment Feasibility"),):
             app = AppTest.from_function(placeholder_script, args=(function_name,), default_timeout=60)
             app.run()
             self.assertFalse(app.exception, function_name)
