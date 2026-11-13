@@ -1,10 +1,17 @@
-# Customer Intelligence & Decision Support (local Streamlit app)
+# Customer Intelligence & Decision Support
 
-A four-page research exhibit. **Customer Overview**, **Purchase Propensity**, **Targeting Explorer** and **CRM Experiment Feasibility** are implemented.
+A local Streamlit application presenting four research and planning views built from corrected Online Retail II analysis. Historical pages describe or predict purchasing in the 2009–2011 data; they do not show current CRM customers or estimate the effect of marketing contact. The experiment page is a hypothetical calculator, not a launched campaign.
 
-## Run
+## Pages
 
-From the repository root (Python 3.11):
+- **Customer Overview** — corrected-V2 purchasing, mature 90-day follow-up, revenue concentration, cohort activity and descriptive frequency/recency groups.
+- **Purchase Propensity** — separate M1 new-customer and M2 established-customer prediction results, plus exploratory calibration. M1 and M2 are different tasks; calibration reuses a previously examined holdout.
+- **CRM Targeting Explorer** — retrospective purchase capture for four policies at the evaluated 5%, 10% and 20% capacities. Purchase propensity is not causal CRM uplift.
+- **CRM Experiment Feasibility** — hypothetical enrollment, allocation, MDE and economics for the proposed M4 randomized pilot. No treatment effect or business input is estimated from the historical data.
+
+## Install and launch
+
+Use Python 3.11 from the repository root:
 
 ```sh
 python3.11 -m venv .venv
@@ -12,51 +19,33 @@ python3.11 -m venv .venv
 .venv/bin/streamlit run app/streamlit_app.py
 ```
 
-At runtime the first three pages read only their tracked aggregate bundles `app_data/customer_overview_v1.json`, `app_data/propensity_summary_v1.json` and `app_data/targeting_v1.json`. CRM Experiment Feasibility calculates explicitly hypothetical scenarios in memory with the existing M4 functions. The app needs no raw UCI files, `data/processed/` outputs, row-level predictions or customer-level data.
+The app runs locally and makes no network or database calls.
+
+## Data and evidence limits
+
+The three historical pages read only the reviewed aggregate JSON bundles in `app_data/`. The feasibility page calculates in memory using the M4 scenario functions. The app does not require raw transactions, customer-level records, prediction rows, targeting lists or model binaries.
+
+The underlying retail data are observational and historical, with a partial source endpoint in December 2011. First observed purchase is not verified acquisition; gross merchandise is not net sales, margin or profit; and descriptive groups are not validated CRM segments. Prediction and retrospective targeting metrics measure purchasing patterns, not treatment response. Actual eligibility, consent, contact rules, margin variance and costs are not established. See the root [project README](../README.md) and [data provenance and attribution](../docs/DATA_PROVENANCE.md) for research definitions and source terms.
 
 ## Tests
 
-```sh
-.venv/bin/python -m unittest tests.test_customer_overview_bundle tests.test_dashboard_app tests.test_propensity_summary_bundle tests.test_purchase_propensity_page tests.test_targeting_bundle tests.test_experiment_feasibility_page tests.test_crm_pilot_feasibility -v
-```
-
-## Rebuilding the bundle (one-time research step, maintainers only)
-
-This step needs the accepted corrected-V2 aggregate outputs in the ignored `data/processed/corrected_v2_customer_analytics/` directory. It is not part of normal app use.
+Run the focused application and M4 tests:
 
 ```sh
-.venv/bin/python src/customer_overview_bundle.py --output app_data/customer_overview_v1.json
+.venv/bin/python -m unittest \
+  tests.test_customer_overview_bundle \
+  tests.test_dashboard_app \
+  tests.test_propensity_summary_bundle \
+  tests.test_purchase_propensity_page \
+  tests.test_targeting_bundle \
+  tests.test_experiment_feasibility_page \
+  tests.test_crm_pilot_feasibility
 ```
 
-Before writing, the builder re-applies the accepted 007D contract checks. It keeps only allowlisted aggregate fields and records source hashes and a content hash. The four small post-entry cohort cells are null in this dashboard as a display convention only; they are recoverable from the already tracked accepted corrected-V2 Figure 2 SVG, so this is not a disclosure guarantee.
-
-The loader checks the data-section hash against an independently pinned approved application-bundle hash. This detects changes relative to that approved bundle; it is not a cryptographic authenticity guarantee if both the bundle and application source are changed.
-
-## Rebuilding Purchase Propensity summary (maintainers only)
-
-The propensity bundle builder reads only the frozen M2 aggregate run manifest and calibration aggregate, checks their SHA-256 values plus the tracked M1/M2 report and protocol hashes, then extracts an allowlisted summary. Pass local paths explicitly; generated bundle provenance stores hashes and repository-relative source references, not local paths.
+Run the full repository suite:
 
 ```sh
-.venv/bin/python src/propensity_summary_bundle.py \
-  --m2-run-manifest "$LOCAL_DATA_DIR/m2_008_baseline_outputs/monthly_purchase_baselines_m2_008_run_manifest.json" \
-  --m2-calibration-aggregate "$LOCAL_DATA_DIR/m2_012_sequential_calibration_outputs/m2_012_sequential_calibration_aggregate.json" \
-  --output app_data/propensity_summary_v1.json
+.venv/bin/python -m unittest discover -s tests
 ```
 
-The propensity bundle has an independent application-side content hash pin. A changed research source is rejected for deliberate review rather than silently substituted. The dashboard does not read prediction Parquets or model artifacts.
-
-## Rebuilding CRM Targeting Explorer summary (maintainers only)
-
-Use only the final frozen M3-002 aggregate JSON. The builder verifies its approved aggregate hash and exports allowlisted metrics; it does not read customer-level selections.
-
-```sh
-.venv/bin/python src/targeting_bundle.py \
-  ../source_data/uci_online_retail_ii/m3_002_targeting_outputs_final/m3_002_targeting_aggregate.json \
-  --output app_data/targeting_v1.json
-```
-
-The loader pins the aggregate source and canonical content hashes independently. The app displays the three evaluated capacities only.
-
-## CRM Experiment Feasibility
-
-This page does not use a data bundle. Its inputs are visibly hypothetical and its calculations reuse `allocate_enrollment`, `mean_difference_mde`, `commercial_scenarios` and `capacity_sensitivity` from `src/crm_pilot_feasibility.py`. The default scenario follows the M4 primary 10% total-enrollment design, 1:1 allocation, two-sided α=0.05 and 80% power. Changing capacity is shown as a sensitivity scenario and may change the target population and estimand. No experiment, treatment effect, eligible count, margin variance or campaign cost is inferred from the historical data.
+Some research-input rebuild tests skip when the external source aggregates are unavailable. They are not needed to run the app or its page tests.

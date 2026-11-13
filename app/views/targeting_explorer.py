@@ -1,4 +1,4 @@
-"""Placeholder pages for later M5 milestones."""
+"""Retrospective CRM targeting comparison page."""
 from __future__ import annotations
 
 import os

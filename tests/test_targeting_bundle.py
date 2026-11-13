@@ -54,7 +54,7 @@ class TargetingBundleTests(unittest.TestCase):
                 def script(root):
                     import sys
                     sys.path.insert(0,str(root/"app")); sys.path.insert(0,str(root/"src"))
-                    from views.placeholders import render_targeting_explorer
+                    from views.targeting_explorer import render_targeting_explorer
                     render_targeting_explorer()
                 app=AppTest.from_function(script,args=(root,),default_timeout=60).run()
             finally:
@@ -75,7 +75,7 @@ class TargetingBundleTests(unittest.TestCase):
         def script(root):
             import sys
             sys.path.insert(0,str(root/"app")); sys.path.insert(0,str(root/"src"))
-            from views.placeholders import render_targeting_explorer
+            from views.targeting_explorer import render_targeting_explorer
             render_targeting_explorer()
         app=AppTest.from_function(script,args=(root,),default_timeout=60).run()
         self.assertFalse(app.exception,[e.value for e in app.exception])

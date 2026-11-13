@@ -17,14 +17,14 @@ for path in (APP_DIR, ROOT / "src"):
 
 from views.customer_overview import render as render_customer_overview  # noqa: E402
 from views.purchase_propensity import render as render_purchase_propensity  # noqa: E402
-from views.placeholders import render_targeting_explorer  # noqa: E402
+from views.targeting_explorer import render_targeting_explorer  # noqa: E402
 from views.experiment_feasibility import render as render_experiment_feasibility  # noqa: E402
 
 PAGES = [
     st.Page(render_customer_overview, title="Customer Overview", url_path="customer-overview", default=True),
     st.Page(render_purchase_propensity, title="Purchase Propensity", url_path="purchase-propensity"),
-    st.Page(render_targeting_explorer, title="Targeting Explorer", url_path="targeting-explorer"),
-    st.Page(render_experiment_feasibility, title="Experiment Feasibility", url_path="experiment-feasibility"),
+    st.Page(render_targeting_explorer, title="CRM Targeting Explorer", url_path="targeting-explorer"),
+    st.Page(render_experiment_feasibility, title="CRM Experiment Feasibility", url_path="experiment-feasibility"),
 ]
 
 

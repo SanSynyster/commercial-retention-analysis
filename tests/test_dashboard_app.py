@@ -48,7 +48,7 @@ class DashboardAppTests(unittest.TestCase):
     def test_navigation_registers_four_pages(self) -> None:
         app = self._run()
         source = APP.read_text(encoding="utf-8")
-        for title in ("Customer Overview", "Purchase Propensity", "Targeting Explorer", "Experiment Feasibility"):
+        for title in ("Customer Overview", "Purchase Propensity", "CRM Targeting Explorer", "CRM Experiment Feasibility"):
             self.assertIn(f'title="{title}"', source)
         self.assertIn("st.navigation(PAGES)", source)
         self.assertFalse(app.exception)
