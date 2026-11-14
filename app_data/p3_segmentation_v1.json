@@ -1,0 +1,518 @@
+{
+  "bundle_name": "commercial_retention_p3_segmentation_aggregate",
+  "schema_version": 1,
+  "data": {
+    "cohort": {
+      "reference_month": "2011-03",
+      "reference_customers": 4260,
+      "development_months": [
+        "2011-04",
+        "2011-05",
+        "2011-06"
+      ],
+      "development_snapshots": 12961,
+      "exploratory_months": [
+        "2011-07",
+        "2011-08",
+        "2011-09",
+        "2011-10",
+        "2011-11"
+      ],
+      "exploratory_snapshots": 21672
+    },
+    "rfm": {
+      "score_definition": "five ordinal bins at reference quintiles; R reversed so lower recency is higher score; ties enter the higher non-reversed bin (lower reversed R bin).",
+      "fit_month": "2011-03",
+      "cutpoints": {
+        "recency": {
+          "original_scale": [
+            32.486249981565436,
+            90.48694116504903,
+            124.34777777593102,
+            190.3869438123333
+          ],
+          "reverse": true,
+          "column": "days_since_last_qualifying_purchase"
+        },
+        "frequency": {
+          "original_scale": [
+            1.0,
+            2.0000000000000004,
+            3.0,
+            5.999999999999999
+          ],
+          "reverse": false,
+          "column": "qualifying_purchase_occasions_365d"
+        },
+        "monetary": {
+          "original_scale": [
+            246.49999999999997,
+            489.6,
+            948.1617928987074,
+            2040.7995990366896
+          ],
+          "reverse": false,
+          "column": "qualifying_gross_merchandise_365d"
+        }
+      },
+      "assignment_precedence": [
+        "Champions",
+        "At risk",
+        "Hibernating",
+        "Loyal",
+        "Potential",
+        "Big spenders",
+        "Regular"
+      ],
+      "segment_descriptions": {
+        "Champions": "R\u22654, F\u22654, M\u22654",
+        "At risk": "R\u22642, F\u22653",
+        "Hibernating": "R\u22642, F\u22642",
+        "Loyal": "R\u22654, F\u22653",
+        "Potential": "R\u22654, F\u22642",
+        "Big spenders": "M\u22654 after higher-precedence rules",
+        "Regular": "All remaining eligible customers"
+      },
+      "reference_profiles": {
+        "At risk": {
+          "n": 737,
+          "share": 0.17300469483568076,
+          "recency_median_days": 165.51597222222222,
+          "frequency_median_365d": 2.0,
+          "monetary_median_365d_gbp": 749.2
+        },
+        "Big spenders": {
+          "n": 309,
+          "share": 0.07253521126760563,
+          "recency_median_days": 104.40625,
+          "frequency_median_365d": 4.0,
+          "monetary_median_365d_gbp": 1574.5
+        },
+        "Champions": {
+          "n": 1023,
+          "share": 0.24014084507042255,
+          "recency_median_days": 29.3375,
+          "frequency_median_365d": 7.0,
+          "monetary_median_365d_gbp": 2561.62
+        },
+        "Hibernating": {
+          "n": 967,
+          "share": 0.22699530516431926,
+          "recency_median_days": 235.53402777777777,
+          "frequency_median_365d": 1.0,
+          "monetary_median_365d_gbp": 248.65
+        },
+        "Loyal": {
+          "n": 422,
+          "share": 0.09906103286384976,
+          "recency_median_days": 44.51006944444444,
+          "frequency_median_365d": 3.0,
+          "monetary_median_365d_gbp": 608.88
+        },
+        "Potential": {
+          "n": 259,
+          "share": 0.0607981220657277,
+          "recency_median_days": 29.40763888888889,
+          "frequency_median_365d": 1.0,
+          "monetary_median_365d_gbp": 218.52
+        },
+        "Regular": {
+          "n": 543,
+          "share": 0.12746478873239436,
+          "recency_median_days": 104.61597222222223,
+          "frequency_median_365d": 2.0,
+          "monetary_median_365d_gbp": 387.18
+        }
+      }
+    },
+    "kmeans": {
+      "selection": {
+        "algorithm": "KMeans",
+        "k": 3,
+        "criteria": "Among candidates with every reference cluster >=3%, mean seed ARI >=0.90, and mean customer-bootstrap ARI >=0.75, choose greatest bootstrap ARI; then seed ARI; then smaller k; prefer KMeans on a remaining tie.",
+        "used_future_outcomes": false
+      },
+      "quality": {
+        "silhouette_sampled": 0.38381473773820685,
+        "davies_bouldin": 1.0394520263740026,
+        "calinski_harabasz": 2169.5712278549645,
+        "minimum_cluster_share": 0.13309859154929576,
+        "mean_seed_ari": 0.992878709352532,
+        "customer_bootstrap_ari_mean": 0.9741361822645084,
+        "customer_bootstrap_ari_p10_p90": [
+          0.9430112520178553,
+          0.9908738219506703
+        ],
+        "customer_bootstrap_repetitions": 12
+      },
+      "reference_profiles": {
+        "0": {
+          "n": 567,
+          "share": 0.13309859154929576,
+          "feature_medians": {
+            "days_since_last_qualifying_purchase": 31.43263888888889,
+            "qualifying_purchase_occasions_365d": 2.0,
+            "qualifying_gross_merchandise_365d": 410.23,
+            "average_qualifying_basket_value_365d": 220.1
+          },
+          "recent_purchase_share_90d_median": 1.0
+        },
+        "1": {
+          "n": 2310,
+          "share": 0.5422535211267606,
+          "feature_medians": {
+            "days_since_last_qualifying_purchase": 150.44131944444445,
+            "qualifying_purchase_occasions_365d": 1.0,
+            "qualifying_gross_merchandise_365d": 388.64,
+            "average_qualifying_basket_value_365d": 245.76625
+          },
+          "recent_purchase_share_90d_median": 0.0
+        },
+        "2": {
+          "n": 1383,
+          "share": 0.3246478873239437,
+          "feature_medians": {
+            "days_since_last_qualifying_purchase": 42.50486111111111,
+            "qualifying_purchase_occasions_365d": 6.0,
+            "qualifying_gross_merchandise_365d": 2438.84,
+            "average_qualifying_basket_value_365d": 368.77875
+          },
+          "recent_purchase_share_90d_median": 0.2
+        }
+      },
+      "standardized_centroid_profiles": {
+        "0": {
+          "days_since_last_qualifying_purchase": -0.9783322951333466,
+          "qualifying_purchase_occasions_365d": -0.4788310550925996,
+          "qualifying_gross_merchandise_365d": -0.5194951893766275,
+          "average_qualifying_basket_value_365d": -0.31863609781933594,
+          "purchase_occasion_share_90d": 2.111000041616266
+        },
+        "1": {
+          "days_since_last_qualifying_purchase": 0.6348241581565387,
+          "qualifying_purchase_occasions_365d": -0.5413228554271727,
+          "qualifying_gross_merchandise_365d": -0.5166473906662501,
+          "average_qualifying_basket_value_365d": -0.2223236407184684,
+          "purchase_occasion_share_90d": -0.5754954751307669
+        },
+        "2": {
+          "days_since_last_qualifying_purchase": -0.6592403427339084,
+          "qualifying_purchase_occasions_365d": 1.10047216505732,
+          "qualifying_gross_merchandise_365d": 1.0759285935036784,
+          "average_qualifying_basket_value_365d": 0.5019770625619845,
+          "purchase_occasion_share_90d": 0.09577550539092497
+        }
+      }
+    },
+    "outcomes": {
+      "development_apr_jun": {
+        "rfm_segment": {
+          "At risk": {
+            "n": 2976,
+            "purchase_rate": 0.12063172043010753,
+            "mean_future_gross_gbp": 52.77671068548388,
+            "mean_future_occasion_count_30d": 0.13440860215053763
+          },
+          "Big spenders": {
+            "n": 419,
+            "purchase_rate": 0.27923627684964203,
+            "mean_future_gross_gbp": 151.2954892601432,
+            "mean_future_occasion_count_30d": 0.32935560859188545
+          },
+          "Champions": {
+            "n": 3144,
+            "purchase_rate": 0.4402035623409669,
+            "mean_future_gross_gbp": 357.3804325699746,
+            "mean_future_occasion_count_30d": 0.7382315521628499
+          },
+          "Hibernating": {
+            "n": 3351,
+            "purchase_rate": 0.05222321695016413,
+            "mean_future_gross_gbp": 19.56996717397792,
+            "mean_future_occasion_count_30d": 0.05819158460161146
+          },
+          "Loyal": {
+            "n": 1410,
+            "purchase_rate": 0.19361702127659575,
+            "mean_future_gross_gbp": 71.3748085106383,
+            "mean_future_occasion_count_30d": 0.23333333333333334
+          },
+          "Potential": {
+            "n": 1083,
+            "purchase_rate": 0.12927054478301014,
+            "mean_future_gross_gbp": 43.71532779316713,
+            "mean_future_occasion_count_30d": 0.15789473684210525
+          },
+          "Regular": {
+            "n": 578,
+            "purchase_rate": 0.10380622837370242,
+            "mean_future_gross_gbp": 24.597698961937716,
+            "mean_future_occasion_count_30d": 0.10553633217993079
+          }
+        },
+        "ml_segment": {
+          "0": {
+            "n": 2211,
+            "purchase_rate": 0.1791044776119403,
+            "mean_future_gross_gbp": 68.40377204884668,
+            "mean_future_occasion_count_30d": 0.23835368611488014
+          },
+          "1": {
+            "n": 6810,
+            "purchase_rate": 0.08325991189427313,
+            "mean_future_gross_gbp": 27.480349486049924,
+            "mean_future_occasion_count_30d": 0.0907488986784141
+          },
+          "2": {
+            "n": 3940,
+            "purchase_rate": 0.39213197969543145,
+            "mean_future_gross_gbp": 313.06017030456854,
+            "mean_future_occasion_count_30d": 0.6269035532994924
+          }
+        }
+      }
+    },
+    "within_rfm_cluster_variation": {
+      "rfm_groups_with_at_least_two_cluster_cells_n50": 4,
+      "median_purchase_rate_range": 0.08620370344621517,
+      "median_mean_value_range_gbp": 118.10976034864326,
+      "largest_purchase_rate_spreads": [
+        {
+          "rfm_segment": "Big spenders",
+          "qualifying_cluster_cells": 2,
+          "purchase_rate_range": 0.10524364930315314,
+          "mean_value_range_gbp": 117.6425111198972,
+          "minimum_cell_n": 50
+        },
+        {
+          "rfm_segment": "At risk",
+          "qualifying_cluster_cells": 2,
+          "purchase_rate_range": 0.09585526704915125,
+          "mean_value_range_gbp": 120.83290729431596,
+          "minimum_cell_n": 50
+        },
+        {
+          "rfm_segment": "Loyal",
+          "qualifying_cluster_cells": 3,
+          "purchase_rate_range": 0.0765521398432791,
+          "mean_value_range_gbp": 118.57700957738933,
+          "minimum_cell_n": 50
+        },
+        {
+          "rfm_segment": "Champions",
+          "qualifying_cluster_cells": 2,
+          "purchase_rate_range": 0.018396972916750742,
+          "mean_value_range_gbp": 75.18944598369,
+          "minimum_cell_n": 50
+        }
+      ]
+    },
+    "comparison": {
+      "rfm_vs_kmeans_by_month": {
+        "2011-03": {
+          "adjusted_rand_ml_vs_rfm": 0.35703438820389805,
+          "normalized_mutual_information_ml_vs_rfm": 0.49263418329836245
+        },
+        "2011-04": {
+          "adjusted_rand_ml_vs_rfm": 0.4139640988797722,
+          "normalized_mutual_information_ml_vs_rfm": 0.534123305037729
+        },
+        "2011-05": {
+          "adjusted_rand_ml_vs_rfm": 0.4548818044116762,
+          "normalized_mutual_information_ml_vs_rfm": 0.5518000487319602
+        },
+        "2011-06": {
+          "adjusted_rand_ml_vs_rfm": 0.44227569933437144,
+          "normalized_mutual_information_ml_vs_rfm": 0.5433769666501486
+        },
+        "2011-07": {
+          "adjusted_rand_ml_vs_rfm": 0.44274229662806075,
+          "normalized_mutual_information_ml_vs_rfm": 0.5463028486031638
+        },
+        "2011-08": {
+          "adjusted_rand_ml_vs_rfm": 0.4477422076669914,
+          "normalized_mutual_information_ml_vs_rfm": 0.5420597702616362
+        },
+        "2011-09": {
+          "adjusted_rand_ml_vs_rfm": 0.4338456163227974,
+          "normalized_mutual_information_ml_vs_rfm": 0.5337081528660789
+        },
+        "2011-10": {
+          "adjusted_rand_ml_vs_rfm": 0.4674906616326266,
+          "normalized_mutual_information_ml_vs_rfm": 0.5628851176340983
+        },
+        "2011-11": {
+          "adjusted_rand_ml_vs_rfm": 0.495368269915612,
+          "normalized_mutual_information_ml_vs_rfm": 0.5766121765284669
+        }
+      },
+      "reference_ari": 0.35703438820389805,
+      "reference_nmi": 0.49263418329836245,
+      "kmeans_transitions": [
+        {
+          "from_month": "2011-03",
+          "to_month": "2011-04",
+          "matched_customers": 4132,
+          "entrants": 186,
+          "leavers": 128,
+          "same_segment_share": 0.8589060987415296,
+          "adjusted_rand_index": 0.6195244120038452
+        },
+        {
+          "from_month": "2011-04",
+          "to_month": "2011-05",
+          "matched_customers": 4205,
+          "entrants": 114,
+          "leavers": 113,
+          "same_segment_share": 0.8882282996432818,
+          "adjusted_rand_index": 0.6916255766132553
+        },
+        {
+          "from_month": "2011-05",
+          "to_month": "2011-06",
+          "matched_customers": 4197,
+          "entrants": 127,
+          "leavers": 122,
+          "same_segment_share": 0.8710984036216345,
+          "adjusted_rand_index": 0.6528553640381487
+        },
+        {
+          "from_month": "2011-06",
+          "to_month": "2011-07",
+          "matched_customers": 4192,
+          "entrants": 122,
+          "leavers": 132,
+          "same_segment_share": 0.8618797709923665,
+          "adjusted_rand_index": 0.6359459682823575
+        },
+        {
+          "from_month": "2011-07",
+          "to_month": "2011-08",
+          "matched_customers": 4208,
+          "entrants": 118,
+          "leavers": 106,
+          "same_segment_share": 0.8633555133079848,
+          "adjusted_rand_index": 0.6447958973619158
+        },
+        {
+          "from_month": "2011-08",
+          "to_month": "2011-09",
+          "matched_customers": 4204,
+          "entrants": 120,
+          "leavers": 122,
+          "same_segment_share": 0.8682207421503331,
+          "adjusted_rand_index": 0.6556654076558913
+        },
+        {
+          "from_month": "2011-09",
+          "to_month": "2011-10",
+          "matched_customers": 4148,
+          "entrants": 216,
+          "leavers": 176,
+          "same_segment_share": 0.8476374156219865,
+          "adjusted_rand_index": 0.600137937679517
+        },
+        {
+          "from_month": "2011-10",
+          "to_month": "2011-11",
+          "matched_customers": 4063,
+          "entrants": 281,
+          "leavers": 301,
+          "same_segment_share": 0.8291902535072606,
+          "adjusted_rand_index": 0.5625261084349849
+        }
+      ],
+      "rfm_transitions": [
+        {
+          "from_month": "2011-03",
+          "to_month": "2011-04",
+          "matched_customers": 4132,
+          "entrants": 186,
+          "leavers": 128,
+          "same_segment_share": 0.6459341723136496,
+          "adjusted_rand_index": 0.5124509185453766
+        },
+        {
+          "from_month": "2011-04",
+          "to_month": "2011-05",
+          "matched_customers": 4205,
+          "entrants": 114,
+          "leavers": 113,
+          "same_segment_share": 0.7533888228299643,
+          "adjusted_rand_index": 0.6299536148513265
+        },
+        {
+          "from_month": "2011-05",
+          "to_month": "2011-06",
+          "matched_customers": 4197,
+          "entrants": 127,
+          "leavers": 122,
+          "same_segment_share": 0.7800810102454134,
+          "adjusted_rand_index": 0.6660750416582145
+        },
+        {
+          "from_month": "2011-06",
+          "to_month": "2011-07",
+          "matched_customers": 4192,
+          "entrants": 122,
+          "leavers": 132,
+          "same_segment_share": 0.7600190839694656,
+          "adjusted_rand_index": 0.6464578384038797
+        },
+        {
+          "from_month": "2011-07",
+          "to_month": "2011-08",
+          "matched_customers": 4208,
+          "entrants": 118,
+          "leavers": 106,
+          "same_segment_share": 0.7740019011406845,
+          "adjusted_rand_index": 0.6622400444495039
+        },
+        {
+          "from_month": "2011-08",
+          "to_month": "2011-09",
+          "matched_customers": 4204,
+          "entrants": 120,
+          "leavers": 122,
+          "same_segment_share": 0.7647478591817317,
+          "adjusted_rand_index": 0.6691421154914409
+        },
+        {
+          "from_month": "2011-09",
+          "to_month": "2011-10",
+          "matched_customers": 4148,
+          "entrants": 216,
+          "leavers": 176,
+          "same_segment_share": 0.7261330761812922,
+          "adjusted_rand_index": 0.5948914731258029
+        },
+        {
+          "from_month": "2011-10",
+          "to_month": "2011-11",
+          "matched_customers": 4063,
+          "entrants": 281,
+          "leavers": 301,
+          "same_segment_share": 0.7061284764952006,
+          "adjusted_rand_index": 0.5537919635699163
+        }
+      ],
+      "incremental_value_conclusion": "Available evidence does not demonstrate meaningful incremental purchase discrimination beyond RFM. Reviewer-derived April\u2013June AUC diagnostics are not included because they are absent from the verified aggregate source."
+    },
+    "evidence": {
+      "rfm": "Historical description",
+      "purchase_comparison": "Development \u2014 retrospective evaluation",
+      "kmeans": "Exploratory",
+      "exploratory_replay": "Previously examined holdout \u2014 exploratory",
+      "targeting": "Retrospective targeting"
+    },
+    "provenance": {
+      "report": "docs/research/COMMERCIAL_DS_P3_007_ADVANCED_SEGMENTATION.md",
+      "source_file": "source_data/uci_online_retail_ii/p3_007_outputs/p3_007_aggregate_results.json",
+      "sha256_raw_file": "53a7636b839e97cfc489cfa5688076edef3337abaf76b3bb326316b1a5ecf209",
+      "manifest_file": "source_data/uci_online_retail_ii/p3_007_outputs/p3_007_manifest.json",
+      "sha256_manifest": "35bb459509ab58d4d41f519fa3374339b7717d0206412bdd75295aeedc94dea6",
+      "dataset_sha256": "44c580a83bea993fd0e2f8df8a03bb7aa2f11e64085671ea2ed78c9e28e952a8"
+    }
+  },
+  "content_sha256": "590328678dcb144d94d5d8c54a79d767f0590a22554e9e4bd9dabbbad3f522a8"
+}

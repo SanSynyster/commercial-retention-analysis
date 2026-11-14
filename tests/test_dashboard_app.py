@@ -45,10 +45,10 @@ class DashboardAppTests(unittest.TestCase):
         app.radio(key="cohort_population").set_value("first_observed_on_or_after_2010-12-01").run()
         self.assertFalse(app.exception)
 
-    def test_navigation_registers_five_pages(self) -> None:
+    def test_navigation_registers_six_pages(self) -> None:
         app = self._run()
         source = APP.read_text(encoding="utf-8")
-        for title in ("Customer Overview", "Purchase Propensity", "Predictive Intelligence", "CRM Targeting Explorer", "CRM Experiment Feasibility"):
+        for title in ("Customer Overview", "Purchase Propensity", "Predictive Intelligence", "Segmentation Intelligence", "CRM Targeting Explorer", "CRM Experiment Feasibility"):
             self.assertIn(f'title="{title}"', source)
         self.assertIn("st.navigation(PAGES)", source)
         self.assertFalse(app.exception)

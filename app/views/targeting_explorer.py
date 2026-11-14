@@ -19,6 +19,7 @@ def render_targeting_explorer() -> None:
         st.caption(f"Expected file: {Path(path).name}. Rebuild using `src/targeting_bundle.py` and the frozen M3 aggregate.")
         return
     st.caption("**Evidence type: Retrospective targeting.** Historical purchase capture is not the causal effect of contact.")
+    st.caption("Historical RFM segment profiles are available in [Segmentation Intelligence](/segmentation-intelligence); this page continues with existing fixed-capacity retrospective targeting comparisons.")
     choice=st.radio("Evaluated contact capacity", ["5%", "10%", "20%"], horizontal=True, index=1, key="targeting_capacity")
     capacity=int(choice[:-1])/100
     table=policy_comparison(bundle,capacity)

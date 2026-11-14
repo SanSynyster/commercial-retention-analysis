@@ -7,6 +7,7 @@ A local Streamlit application presenting research and planning views built from 
 - **Customer Overview** — corrected-V2 purchasing, mature 90-day follow-up, revenue concentration, cohort activity and descriptive frequency/recency groups.
 - **Purchase Propensity** — separate M1 new-customer and M2 established-customer prediction results, plus exploratory calibration. M1 and M2 are different tasks; calibration reuses a previously examined holdout.
 - **Predictive Intelligence** — aggregate-only P3 M2 comparisons for Logistic C, Random Forest, HistGradientBoosting, XGBoost, LightGBM and frequency; global Random Forest SHAP and stability summaries; P3-005 calibration diagnostics. Development results used for selection are separated from the previously examined July–November exploratory replay.
+- **Segmentation Intelligence** — March 2011 historical RFM profiles and subsequent April–June purchase behaviour, with the selected three-cluster K-Means solution as supplementary exploratory evidence. It links to the existing retrospective CRM Targeting Explorer; it does not assign current customers or estimate contact effects.
 - **CRM Targeting Explorer** — retrospective purchase capture for four policies at the evaluated 5%, 10% and 20% capacities. Purchase propensity is not causal CRM uplift.
 - **CRM Experiment Feasibility** — hypothetical enrollment, allocation, MDE and economics for the proposed M4 randomized pilot. No treatment effect or business input is estimated from the historical data.
 
@@ -38,6 +39,16 @@ To rebuild it, run from the repository root when the reviewed private aggregate 
 
 The builder uses explicit source paths and pinned SHA-256 values; it does not search for a newer or similarly named run. It fails on missing or mismatched sources. Tests that need those external sources skip when they are unavailable; tests of the committed bundle continue to run. Rebuilding writes only the app bundle and does not rerun models.
 
+### P3 segmentation bundle
+
+`app_data/p3_segmentation_v1.json` is an aggregate-only allowlisted projection of the exact P3-007 aggregate cited in the research report. Its builder verifies the raw aggregate SHA-256 and sibling manifest SHA-256 before extraction, validates its schema and content checksum, and excludes the private customer-month assignment Parquet. Rebuild it from the exact sibling `source_data/uci_online_retail_ii/p3_007_outputs/` directory with:
+
+```sh
+.venv/bin/python -m src.segmentation_bundle --build
+```
+
+RFM remains the primary CRM-facing grouping; K-Means k=3 is supplementary exploratory evidence. April–June rates are retrospective outcomes, not calibrated future probabilities. Reviewer-derived April–June AUC diagnostics mentioned in the research report are absent from the verified aggregate source and are not displayed. See [the P3-009C integration report](../docs/research/COMMERCIAL_DS_P3_009C_SEGMENTATION_CRM_INTEGRATION.md) for provenance, results and limitations.
+
 The underlying retail data are observational and historical, with a partial source endpoint in December 2011. First observed purchase is not verified acquisition; gross merchandise is not net sales, margin or profit; and descriptive groups are not validated CRM segments. Prediction and retrospective targeting metrics measure purchasing patterns, not treatment response. The July–November UCI holdout was previously examined and is exploratory, not untouched confirmation. RF is a development reference, not prospectively validated deployment inference; calibration remains a provisional research candidate, and SHAP is predictive attribution rather than causal importance. Actual eligibility, consent, contact rules, margin variance and costs are not established. See the root [project README](../README.md) and [data provenance and attribution](../docs/DATA_PROVENANCE.md) for research definitions and source terms.
 
 ## Tests
@@ -52,6 +63,8 @@ Run the focused application and M4 tests:
   tests.test_purchase_propensity_page \
   tests.test_p3_predictive_bundle \
   tests.test_predictive_intelligence_page \
+  tests.test_segmentation_bundle \
+  tests.test_segmentation_intelligence_page \
   tests.test_targeting_bundle \
   tests.test_experiment_feasibility_page \
   tests.test_crm_pilot_feasibility
