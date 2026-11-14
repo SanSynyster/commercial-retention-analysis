@@ -71,6 +71,9 @@ class CausalEvidenceBundleTests(unittest.TestCase):
         self.assertEqual(cb.build_bundle(), self.bundle)
 
     def test_missing_and_mismatched_sources_fail_clearly(self) -> None:
+        required = [cb.PRIVATE_ROOT / spec["path"] for spec in cb.SOURCES.values()]
+        if not all(path.is_file() for path in required):
+            self.skipTest("Private P3-008 aggregate sources are unavailable.")
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             with self.assertRaisesRegex(cb.SourceUnavailableError, "Missing required P3-008 P3_008A"):

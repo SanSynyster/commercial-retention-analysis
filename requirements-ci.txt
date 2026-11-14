@@ -1,0 +1,7 @@
+# CI validation combines the lean project dependencies with application and test-only imports.
+-r requirements-minimal.txt
+-r app/requirements.txt
+lightgbm==4.7.0
+matplotlib==3.10.9
+shap==0.51.0
+xgboost==3.2.0
