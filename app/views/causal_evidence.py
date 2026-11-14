@@ -1,6 +1,7 @@
-"""Historical randomized-study evidence and exploratory uplift comparisons."""
+"""Historical randomised-study evidence and exploratory uplift comparisons."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import altair as alt
@@ -8,6 +9,8 @@ import pandas as pd
 import streamlit as st
 
 from causal_evidence_bundle import BundleError, DEFAULT_BUNDLE, load_bundle
+
+BUNDLE_ENV = "P3_CAUSAL_BUNDLE"
 
 
 @st.cache_data(show_spinner=False)
@@ -18,15 +21,16 @@ def _load(path: str) -> dict:
 def render() -> None:
     st.title("Causal Evidence & Experimentation")
     try:
-        bundle = _load(str(DEFAULT_BUNDLE))
+        bundle_path = Path(os.environ.get(BUNDLE_ENV, str(DEFAULT_BUNDLE)))
+        bundle = _load(str(bundle_path))
     except BundleError as exc:
         st.error(f"The aggregate causal evidence bundle could not be loaded, so no results are shown. {exc}")
-        st.caption(f"Expected file: {DEFAULT_BUNDLE.name}. Rebuild with `.venv/bin/python -m src.causal_evidence_bundle --build` when verified P3-008 aggregate sources are available.")
+        st.caption(f"Expected file: {Path(os.environ.get(BUNDLE_ENV, str(DEFAULT_BUNDLE))).name}. Rebuild with `.venv/bin/python -m src.causal_evidence_bundle --build` when verified P3-008 aggregate sources are available.")
         return
     data = bundle["data"]
     _design_overview(data)
     tab_primary, tab_secondary, tab_development, tab_interpretation = st.tabs([
-        "Locked test · primary", "Secondary randomized comparisons", "Development · uplift policy", "Interpretation",
+        "Locked test · primary", "Secondary randomised comparisons", "Development · uplift policy", "Interpretation",
     ])
     with tab_primary:
         _primary_result(data)
@@ -42,8 +46,8 @@ def render() -> None:
 
 def _design_overview(data: dict) -> None:
     design = data["design"]
-    st.caption("**Historical description.** Hillstrom is a separate randomized email experiment, distinct from the observational UCI Online Retail II customer history used on other pages.")
-    st.subheader("Three-arm randomized design")
+    st.caption("**Historical description.** Hillstrom is a separate randomised email experiment, distinct from the observational UCI Online Retail II customer history used on other pages.")
+    st.subheader("Three-arm randomised design")
     a, b, c, d = st.columns(4)
     a.metric("Observations", f"{design['observations']:,}")
     b.metric("Men's email", f"{design['arms'][0]['assigned']:,}")
@@ -51,7 +55,7 @@ def _design_overview(data: dict) -> None:
     d.metric("No email", f"{design['arms'][2]['assigned']:,}")
     arm_table = pd.DataFrame(design["arms"])
     arm_chart = alt.Chart(arm_table).mark_bar().encode(
-        x=alt.X("assigned:Q", title="Randomized observations", axis=alt.Axis(format=",")),
+        x=alt.X("assigned:Q", title="Randomised observations", axis=alt.Axis(format=",")),
         y=alt.Y("label:N", title=None, sort=None),
         color=alt.Color("label:N", legend=None, scale=alt.Scale(range=["#147D83", "#67A6A0", "#9DB7B5"])),
         tooltip=[alt.Tooltip("label:N", title="Assignment"), alt.Tooltip("assigned:Q", title="Rows", format=",")],
@@ -72,7 +76,7 @@ def _primary_result(data: dict) -> None:
     first.metric("Men's email", f"{result['events_treated']:,} / {result['n_treated']:,}", f"{result['rate_treated']:.3%} visited")
     second.metric("No email", f"{result['events_control']:,} / {result['n_control']:,}", f"{result['rate_control']:.3%} visited")
     st.metric("Risk difference", f"{result['risk_difference_pp']:+.4f} percentage points", f"{result['additional_visits_per_1000']:.2f} additional visits per 1,000 assigned")
-    st.caption(f"95% Newcombe/Wilson CI [{result['ci95_low_pp']:+.4f}, {result['ci95_high_pp']:+.4f}] percentage points · exact two-sided randomization p = {_format_p(result['exact_two_sided_randomization_p'])}.")
+    st.caption(f"95% Newcombe/Wilson CI [{result['ci95_low_pp']:+.4f}, {result['ci95_high_pp']:+.4f}] percentage points · exact two-sided randomisation p = {_format_p(result['exact_two_sided_randomization_p'])}.")
     plot = pd.DataFrame([{"Contrast": "Men's email assignment vs no email", "Estimate": result["risk_difference_pp"], "Lower": result["ci95_low_pp"], "Upper": result["ci95_high_pp"]}])
     zero = alt.Chart(pd.DataFrame({"x": [0]})).mark_rule(color="#687780", strokeDash=[5, 4]).encode(x="x:Q")
     interval = alt.Chart(plot).mark_errorbar(ticks=True, color="#147D83", thickness=3).encode(
@@ -186,7 +190,7 @@ def _source_panel(data: dict, bundle_hash: str) -> None:
     for name, source in provenance["sources"].items():
         st.caption(f"{name}: {source.get('source_file', source.get('report'))} · SHA-256 {source.get('sha256_raw_file', source.get('sha256_report'))}")
     st.caption("Source aggregates were extracted by fixed paths and raw-file hashes. No raw Hillstrom rows, row-level outcomes, prediction Parquet, test-row Parquet or split assignments are included in the application bundle.")
-    st.caption("This is one historical randomized experiment with no observed delivery/open/engagement and no contact cost or margin. Conversion/spend evidence was inconclusive. Effects are not established to transport to current campaigns or the UCI customer population.")
+    st.caption("This is one historical randomised experiment with no observed delivery/open/engagement and no contact cost or margin. Conversion/spend evidence was inconclusive. Effects are not established to transport to current campaigns or the UCI customer population.")
 
 
 def _format_p(value: float) -> str:

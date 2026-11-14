@@ -81,7 +81,7 @@ class TargetingBundleTests(unittest.TestCase):
         self.assertFalse(app.exception,[e.value for e in app.exception])
         self.assertEqual(app.title[0].value,"CRM Targeting Explorer")
         self.assertIn("Model C versus alternatives",[x.value for x in app.subheader])
-        self.assertTrue(any("not randomized treatment response" in x.value for x in app.warning))
+        self.assertTrue(any("not randomised treatment response" in x.value for x in app.warning))
         self.assertIn("Frequency-rule pooled precision; Model C has no material ties.",[x.value for x in app.caption])
         self.assertTrue(any("About 17%" in x.value and "0.5–0.7 percentage points" in x.value and "not replacement estimates" in x.value for x in app.markdown))
         for capacity in ("5%", "10%", "20%"):

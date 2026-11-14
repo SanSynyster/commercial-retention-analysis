@@ -1,6 +1,6 @@
 # Customer Intelligence & Decision Support
 
-A local Streamlit application presenting research and planning views built from corrected Online Retail II analysis and a separate historical randomized email experiment. UCI-based pages describe or predict purchasing in the 2009–2011 data; they do not show current CRM customers. The causal evidence page summarizes Hillstrom assignment effects and does not provide UCI customer scores or campaign execution. The experiment-feasibility page is a hypothetical calculator, not a launched campaign.
+A local seven-page Streamlit application presenting research and planning views built from corrected Online Retail II analysis and a separate historical randomised email experiment. UCI-based pages describe or predict purchasing in the 2009–2011 data; they do not show current CRM customers. The causal evidence page summarizes Hillstrom assignment effects and does not provide UCI customer scores or campaign execution. The experiment-feasibility page is a hypothetical calculator, not a launched campaign.
 
 ## Pages
 
@@ -8,9 +8,9 @@ A local Streamlit application presenting research and planning views built from 
 - **Purchase Propensity** — separate M1 new-customer and M2 established-customer prediction results, plus exploratory calibration. M1 and M2 are different tasks; calibration reuses a previously examined holdout.
 - **Predictive Intelligence** — aggregate-only P3 M2 comparisons for Logistic C, Random Forest, HistGradientBoosting, XGBoost, LightGBM and frequency; global Random Forest SHAP and stability summaries; P3-005 calibration diagnostics. Development results used for selection are separated from the previously examined July–November exploratory replay.
 - **Segmentation Intelligence** — March 2011 historical RFM profiles and subsequent April–June purchase behaviour, with the selected three-cluster K-Means solution as supplementary exploratory evidence. It links to the existing retrospective CRM Targeting Explorer; it does not assign current customers or estimate contact effects.
-- **Causal Evidence & Experimentation** — aggregate-only Hillstrom randomized-study evidence, with the locked-test assignment effect and Holm-adjusted secondary visit comparisons separated from exploratory development uplift-policy comparisons. Hillstrom is distinct from the observational UCI retail population; no customer scoring or campaign execution is provided.
+- **Causal Evidence & Experimentation** — aggregate-only Hillstrom randomised-study evidence, with the locked-test assignment effect and Holm-adjusted secondary visit comparisons separated from exploratory development uplift-policy comparisons. Hillstrom is distinct from the observational UCI retail population; no customer scoring or campaign execution is provided.
 - **CRM Targeting Explorer** — retrospective purchase capture for four policies at the evaluated 5%, 10% and 20% capacities. Purchase propensity is not causal CRM uplift.
-- **CRM Experiment Feasibility** — hypothetical enrollment, allocation, MDE and economics for the proposed M4 randomized pilot. No treatment effect or business input is estimated from the historical data.
+- **CRM Experiment Feasibility** — hypothetical enrollment, allocation, MDE and economics for the proposed M4 randomised pilot. No treatment effect or business input is estimated from the historical data.
 
 ## Install and launch
 
@@ -24,9 +24,26 @@ python3.11 -m venv .venv
 
 The app runs locally and makes no network or database calls.
 
+It does not perform live P3 model inference, train models at startup, read private source datasets, create customer-level scores or lists, or execute campaigns. It loads the committed aggregate bundles and calculates only the documented M4 planning scenarios in memory.
+
 ## Data and evidence limits
 
 The historical research pages read only reviewed aggregate JSON bundles in `app_data/`. The feasibility page calculates in memory using the M4 scenario functions. The app does not require raw transactions, customer-level records, prediction rows, targeting lists or model binaries.
+
+### Optional bundle path overrides
+
+Aggregate-backed pages use the committed `app_data/` bundle by default. For local inspection or controlled error testing, set an override to a compatible, content-pinned bundle JSON path before startup:
+
+| Page | Environment variable |
+|---|---|
+| Customer Overview | `CUSTOMER_OVERVIEW_BUNDLE` |
+| Purchase Propensity | `PURCHASE_PROPENSITY_BUNDLE` |
+| Predictive Intelligence | `P3_PREDICTIVE_BUNDLE` |
+| Segmentation Intelligence | `P3_SEGMENTATION_BUNDLE` |
+| Causal Evidence & Experimentation | `P3_CAUSAL_BUNDLE` |
+| CRM Targeting Explorer | `TARGETING_BUNDLE` |
+
+For example: `P3_CAUSAL_BUNDLE=/path/to/p3_causal_v1.json .venv/bin/streamlit run app/streamlit_app.py`. Missing, unreadable, malformed, unsupported or checksum-mismatched bundles produce a page-level error and suppress results. Overrides do not bypass schema or content-SHA validation. CRM Experiment Feasibility has no bundle; it uses the frozen scenario calculator.
 
 ### P3 predictive bundle
 
@@ -60,7 +77,7 @@ RFM remains the primary CRM-facing grouping; K-Means k=3 is supplementary explor
 
 The page labels the primary visit assignment effect as confirmatory locked-test evidence, secondary visit contrasts as Holm-adjusted, and CATE/policy comparisons as exploratory development. Its only development policy-value budget is the verified 20% comparison. No personalized policy was evaluated on the locked test; conversion/spend contrasts were inconclusive. See [the P3-009D integration report](../docs/research/COMMERCIAL_DS_P3_009D_CAUSAL_EVIDENCE_INTEGRATION.md) for hashes, evidence and limitations.
 
-The underlying retail data are observational and historical, with a partial source endpoint in December 2011. First observed purchase is not verified acquisition; gross merchandise is not net sales, margin or profit; and descriptive groups are not validated CRM segments. Prediction and retrospective targeting metrics measure purchasing patterns, not treatment response. The July–November UCI holdout was previously examined and is exploratory, not untouched confirmation. RF is a development reference, not prospectively validated deployment inference; calibration remains a provisional research candidate, and SHAP is predictive attribution rather than causal importance. Actual eligibility, consent, contact rules, margin variance and costs are not established. See the root [project README](../README.md) and [data provenance and attribution](../docs/DATA_PROVENANCE.md) for research definitions and source terms.
+Evidence labels distinguish historical description, historical prediction, development model selection, the previously examined exploratory holdout, retrospective targeting, hypothetical scenarios, confirmatory randomised locked-test evidence, secondary randomised comparisons, and exploratory development policy evaluation. These labels do not make historical results prospective evidence. The underlying retail data are observational and historical, with a partial source endpoint in December 2011. First observed purchase is not verified acquisition; gross merchandise is not net sales, margin or profit; and descriptive groups are not validated CRM segments. Prediction and retrospective targeting metrics measure purchasing patterns, not treatment response. The July–November UCI holdout was previously examined and is exploratory, not untouched confirmation. Random Forest is a development reference, not prospectively validated deployment inference; calibration remains a provisional research candidate, and SHAP is predictive attribution rather than causal importance. Hillstrom is a separate historical experiment and its effects are not assumed to transport to UCI customers. Actual eligibility, consent, contact rules, margin variance and costs are not established. See the root [project README](../README.md) and [data provenance and attribution](../docs/DATA_PROVENANCE.md) for research definitions and source terms.
 
 ## Tests
 
@@ -70,6 +87,7 @@ Run the focused application and M4 tests:
 .venv/bin/python -m unittest \
   tests.test_customer_overview_bundle \
   tests.test_dashboard_app \
+  tests.test_application_quality \
   tests.test_propensity_summary_bundle \
   tests.test_purchase_propensity_page \
   tests.test_p3_predictive_bundle \

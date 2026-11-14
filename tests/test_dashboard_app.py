@@ -27,6 +27,12 @@ class DashboardAppTests(unittest.TestCase):
 
     def test_customer_overview_renders_without_errors(self) -> None:
         app = self._run()
+        self.assertEqual(len(app._registered_pages), 7)
+        self.assertEqual({record["page_name"] for record in app._registered_pages.values()}, {
+            "Customer Overview", "Purchase Propensity", "Predictive Intelligence", "Segmentation Intelligence",
+            "Causal Evidence & Experimentation", "CRM Targeting Explorer", "CRM Experiment Feasibility",
+        })
+        self.assertEqual(app.page_link[0].proto.page, "segmentation-intelligence")
         self.assertFalse(app.exception, [e.value for e in app.exception])
         self.assertEqual(len(app.error), 0)
         self.assertEqual(app.title[0].value, "Customer Overview")
@@ -47,10 +53,16 @@ class DashboardAppTests(unittest.TestCase):
 
     def test_navigation_registers_seven_pages(self) -> None:
         app = self._run()
-        source = APP.read_text(encoding="utf-8")
+        source = (ROOT / "app/page_registry.py").read_text(encoding="utf-8")
         for title in ("Customer Overview", "Purchase Propensity", "Predictive Intelligence", "Segmentation Intelligence", "Causal Evidence & Experimentation", "CRM Targeting Explorer", "CRM Experiment Feasibility"):
             self.assertIn(f'title="{title}"', source)
-        self.assertIn("st.navigation(PAGES)", source)
+        self.assertEqual(source.count("st.Page("), 7)
+        self.assertIn("st.page_link(SEGMENTATION_INTELLIGENCE_PAGE", (ROOT / "app/views/customer_overview.py").read_text())
+        self.assertIn("st.page_link(TARGETING_EXPLORER_PAGE", (ROOT / "app/views/segmentation_intelligence.py").read_text())
+        self.assertIn("st.page_link(SEGMENTATION_INTELLIGENCE_PAGE", (ROOT / "app/views/targeting_explorer.py").read_text())
+        entry = APP.read_text(encoding="utf-8")
+        self.assertIn("from page_registry import PAGES", entry)
+        self.assertIn("st.navigation(PAGES)", entry)
         self.assertFalse(app.exception)
 
     def test_missing_bundle_shows_error_instead_of_failing(self) -> None:

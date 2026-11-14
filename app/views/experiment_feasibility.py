@@ -19,12 +19,25 @@ def _gbp(value: float) -> str:
     return f"£{value:,.2f}"
 
 
+def _format_sensitivity_table(sensitivity: pd.DataFrame) -> pd.io.formats.style.Styler:
+    display = sensitivity.rename(columns={
+        "Approximate MDE (£ per randomized customer)": "Approximate MDE (£ per randomised customer)"
+    })
+    return display.style.format({
+        "Enrollment capacity": "{:.0%}",
+        "Approximate MDE (£ per randomised customer)": "£{:.2f}",
+        "Enrolled customers": "{:,.0f}",
+        "Treatment assignments": "{:,.0f}",
+        "Control assignments": "{:,.0f}",
+    })
+
+
 def render() -> None:
     st.title("CRM Experiment Feasibility")
     st.caption("**Evidence type: Hypothetical scenario.** No CRM experiment has been launched and no causal uplift has been measured.")
     st.markdown(
         "**Proposed design:** one enrollment wave among established customers who meet current CRM eligibility rules; "
-        "select the top 10% by 365-day qualifying purchase-date frequency; randomize persistently at customer level 1:1; "
+        "select the top 10% by 365-day qualifying purchase-date frequency; randomise persistently at customer level 1:1; "
         "send one non-discount study email to treatment and no study email to control. Both arms otherwise receive "
         "comparable business-as-usual treatment. Primary outcome: 30-day net customer contribution margin; primary "
         "analysis: intention-to-treat difference in mean outcome between assigned arms."
@@ -64,7 +77,7 @@ def render() -> None:
     allocation = scenario["allocation"]
     economics = scenario["economics"]
     st.subheader("Enrollment and 1:1 allocation")
-    st.caption("M4 convention: enrollment is ceil(eligible customers × capacity). For scenario arithmetic, treatment receives an odd extra assignment; a real trial must allocate through its prespecified randomization procedure.")
+    st.caption("M4 convention: enrollment is ceil(eligible customers × capacity). For scenario arithmetic, treatment receives an odd extra assignment; a real trial must allocate through its prespecified randomisation procedure.")
     alloc_cols = st.columns(5)
     alloc_cols[0].metric("Eligible customers", f"{allocation['eligible_customers']:,}")
     alloc_cols[1].metric("Enrollment capacity", f"{capacity:.0%}")
@@ -77,11 +90,11 @@ def render() -> None:
     mde = scenario["mde_gbp_per_randomized_customer"]
     net_itt_effect = economics["net_incremental_contribution_gbp_per_treatment_assignment"]
     stats_cols = st.columns(4)
-    stats_cols[0].metric("Approximate MDE for treatment − control mean net margin", _gbp(mde), help="Per randomized customer; a normal-approximation planning value, not expected campaign uplift.")
+    stats_cols[0].metric("Approximate MDE for treatment − control mean net margin", _gbp(mde), help="Per randomised customer; a normal-approximation planning value, not expected campaign uplift.")
     stats_cols[1].metric("Assumed outcome SD", _gbp(outcome_sd))
     stats_cols[2].metric("Hypothetical net ITT effect", _gbp(net_itt_effect), help="Treatment − control mean contribution margin under the assumed gross increment and contact cost; this is not the cohort-average contribution.")
     stats_cols[3].metric("Planning assumptions", "80% power · α = 0.05", help="Two-sided significance level; independent-arm normal approximation with the M4 1:1 allocation convention.")
-    st.caption("MDE is the approximate treatment − control difference in mean net margin per randomized customer detectable at the stated power and significance assumptions. It is not an expected campaign effect or a promise of exact power.")
+    st.caption("MDE is the approximate treatment − control difference in mean net margin per randomised customer detectable at the stated power and significance assumptions. It is not an expected campaign effect or a promise of exact power.")
     assessment = effect_mde_interpretation(net_itt_effect, mde, scenario["statistical_comparison"])
     if assessment["meets_mde"]:
         st.info(assessment["message"])
@@ -94,27 +107,27 @@ def render() -> None:
     econ_cols[1].metric("Contact cost per treatment assignment", _gbp(contact_cost))
     econ_cols[2].metric("Total incremental campaign contribution", _gbp(economics["total_expected_net_incremental_contribution_gbp"]))
     econ_cols[3].metric("Break-even gross increment", _gbp(economics["break_even_gross_contribution_gbp_per_treatment_assignment"]))
-    st.caption(f"Average hypothetical net contribution per enrolled customer: **{_gbp(economics['net_incremental_contribution_gbp_per_enrolled_customer'])}**. This differs from the net ITT arm-mean contrast because control customers count in the randomized cohort but are not assigned the study email. M4 charges one send cost to each treatment assignment.")
+    st.caption(f"Average hypothetical net contribution per enrolled customer: **{_gbp(economics['net_incremental_contribution_gbp_per_enrolled_customer'])}**. This differs from the net ITT arm-mean contrast because control customers count in the randomised cohort but are not assigned the study email. M4 charges one send cost to each treatment assignment.")
 
     st.subheader("Enrollment-capacity sensitivity")
     st.caption(f"MDE recalculated with the selected eligible population ({eligible:,}) and assumed SD ({_gbp(outcome_sd)}), using the existing M4 formula.")
     sensitivity = sensitivity_table(scenario)
-    chart_data = sensitivity.rename(columns={
-        "Enrollment capacity": "capacity", "Approximate MDE (£ per randomized customer)": "mde",
+    sensitivity_display = sensitivity.rename(columns={
+        "Approximate MDE (£ per randomized customer)": "Approximate MDE (£ per randomised customer)"
+    })
+    chart_data = sensitivity_display.rename(columns={
+        "Enrollment capacity": "capacity",
+        "Approximate MDE (£ per randomised customer)": "mde",
         "Enrolled customers": "enrolled", "Treatment assignments": "treatment", "Control assignments": "control",
     })
     chart = alt.Chart(chart_data).mark_line(point=True).encode(
         x=alt.X("capacity:Q", title="Enrollment capacity (both arms)", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0.1, 1.0])),
-        y=alt.Y("mde:Q", title="Approximate MDE (£ per randomized customer)", scale=alt.Scale(zero=True)),
+        y=alt.Y("mde:Q", title="Approximate MDE (£ per randomised customer)", scale=alt.Scale(zero=True)),
         tooltip=[alt.Tooltip("capacity:Q", format=".0%"), alt.Tooltip("enrolled:Q", format=","),
                  alt.Tooltip("treatment:Q", format=","), alt.Tooltip("control:Q", format=","), alt.Tooltip("mde:Q", title="Approximate MDE", format="£.2f")],
     ).properties(height=260)
     st.altair_chart(chart, width="stretch")
-    st.dataframe(sensitivity.style.format({
-        "Enrollment capacity": "{:.0%}",
-        "Approximate MDE (£ per randomized customer)": "£{:.2f}",
-        "Enrolled customers": "{:,.0f}", "Treatment assignments": "{:,.0f}", "Control assignments": "{:,.0f}",
-    }), hide_index=True, width="stretch")
+    st.dataframe(_format_sensitivity_table(sensitivity), hide_index=True, width="stretch")
     st.caption("Higher enrollment generally lowers the MDE under this formula, but capacity changes the frequency-ranked population and potentially the estimand. Sensitivity points are analytical scenarios, not historical performance extrapolations.")
 
     st.warning(
@@ -129,14 +142,14 @@ def render() -> None:
         st.markdown(
             "The proposed pilot is one wave among established, contact-eligible customers with a complete 365-day "
             "history and at least one qualifying purchase. Rank by 365-day qualifying purchase-date frequency, "
-            "prespecify an outcome-independent deterministic hash tie-break, and select the top 10% before randomization. "
+            "prespecify an outcome-independent deterministic hash tie-break, and select the top 10% before randomisation. "
             "Assignment is persistent at customer level and defines intention-to-treat, regardless of delivery or engagement. "
             "The primary outcome is 30-day net customer contribution margin with finance-approved treatment of discounts, "
             "refunds, COGS, variable fulfilment/payment costs and settlement lag."
         )
         st.markdown(
             "Before any launch, the CRM/finance owners must establish current eligibility and consent, contact suppression "
-            "rules, the randomization unit, contact displacement and business-as-usual comparability, actual margin and "
+            "rules, the randomisation unit, contact displacement and business-as-usual comparability, actual margin and "
             "cost definitions, outcome maturity, a minimum worthwhile ITT effect, budget and harm guardrails."
         )
         st.caption("M4 methods reused: `allocate_enrollment`, `mean_difference_mde`, `commercial_scenarios`, and `capacity_sensitivity` in `src/crm_pilot_feasibility.py`.")

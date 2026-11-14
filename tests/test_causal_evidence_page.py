@@ -14,7 +14,7 @@ class CausalEvidencePageTests(unittest.TestCase):
         app = AppTest.from_file(str(PAGE_APP), default_timeout=60).run()
         self.assertFalse(app.exception, [e.value for e in app.exception])
         self.assertEqual(app.title[0].value, "Causal Evidence & Experimentation")
-        self.assertTrue(any("separate randomized email experiment" in x.value for x in app.caption))
+        self.assertTrue(any("separate randomised email experiment" in x.value for x in app.caption))
         self.assertTrue(any("Confirmatory randomised evidence — locked test" in x.value for x in app.success))
         self.assertTrue(any("+8.1627 percentage points" in x.value for x in app.metric if x.label == "Risk difference"))
         self.assertTrue(any("1.53e-26" in x.value for x in app.caption))

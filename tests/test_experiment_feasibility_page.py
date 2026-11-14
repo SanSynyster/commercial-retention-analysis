@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 import unittest
 from pathlib import Path
 
@@ -10,8 +11,22 @@ from src.crm_pilot_feasibility import (
 )
 from src.experiment_feasibility_metrics import build_scenario, effect_mde_interpretation, sensitivity_table
 
+ROOT = Path(__file__).resolve().parents[1]
+sys.path[:0] = [str(ROOT / "app"), str(ROOT / "src")]
+from views.experiment_feasibility import _format_sensitivity_table
+
 
 class ExperimentFeasibilityMetricsTests(unittest.TestCase):
+    def test_sensitivity_table_renders_british_currency_mde_column(self):
+        scenario = build_scenario(10_000, 0.10, 50.0, 1.0, 0.20)
+        sensitivity = sensitivity_table(scenario)
+        before = sensitivity.copy(deep=True)
+        rendered = _format_sensitivity_table(sensitivity).to_html()
+        self.assertIn("Approximate MDE (£ per randomised customer)", rendered)
+        self.assertIn("£8.86", rendered)
+        self.assertNotIn("£ per randomized customer", rendered)
+        self.assertTrue(sensitivity.equals(before))
+
     def test_adapter_agrees_with_frozen_m4_reference_example(self):
         scenario = build_scenario(10_000, 0.10, 50.0, 1.0, 0.20)
         allocation = scenario["allocation"]

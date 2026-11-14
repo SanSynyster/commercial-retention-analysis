@@ -19,7 +19,9 @@ def render_targeting_explorer() -> None:
         st.caption(f"Expected file: {Path(path).name}. Rebuild using `src/targeting_bundle.py` and the frozen M3 aggregate.")
         return
     st.caption("**Evidence type: Retrospective targeting.** Historical purchase capture is not the causal effect of contact.")
-    st.caption("Historical RFM segment profiles are available in [Segmentation Intelligence](/segmentation-intelligence); this page continues with existing fixed-capacity retrospective targeting comparisons.")
+    from page_registry import SEGMENTATION_INTELLIGENCE_PAGE
+    st.caption("Historical RFM segment profiles are available in Segmentation Intelligence; this page continues with existing fixed-capacity retrospective targeting comparisons.")
+    st.page_link(SEGMENTATION_INTELLIGENCE_PAGE, label="View historical RFM segmentation")
     choice=st.radio("Evaluated contact capacity", ["5%", "10%", "20%"], horizontal=True, index=1, key="targeting_capacity")
     capacity=int(choice[:-1])/100
     table=policy_comparison(bundle,capacity)
@@ -46,7 +48,7 @@ def render_targeting_explorer() -> None:
     rep=rep.rename(columns={"selected_snapshots":"Customer-month selection events","unique_customers":"Distinct customers selected","selected_multiple_months":"Customers selected in multiple months","maximum_months_selected":"Maximum months selected"})
     st.dataframe(rep[["Policy","Customer-month selection events","Distinct customers selected","Customers selected in multiple months","Maximum months selected"]],hide_index=True,width="stretch")
     st.caption("Repeated selection describes retrospective list membership, not repeated actual CRM contact. A campaign would need an approved contact-frequency and suppression policy.")
-    st.warning("Scientific limits: this is a retrospective comparison of future purchasing, not randomized treatment response. Better precision does not establish greater incremental CRM value. The simple frequency rule may be operationally attractive despite small, inconclusive differences. M3 does not establish CRM eligibility, consent, contact policies, costs or economics.")
+    st.warning("Scientific limits: this is a retrospective comparison of future purchasing, not randomised treatment response. Better precision does not establish greater incremental CRM value. The simple frequency rule may be operationally attractive despite small, inconclusive differences. M3 does not establish CRM eligibility, consent, contact policies, costs or economics.")
     with st.expander("Definitions and provenance"):
         st.markdown("Policies: **Model C** frozen 11-feature logistic regression; **Model B (RFM)** frozen RFM logistic regression; **365-day frequency** qualifying purchase-date count; **random benchmark** analytical uniform-selection expectation, with no random list drawn. Outcome: any qualifying purchase in the next 30 days.")
         st.markdown(f"Sources: `{bundle['provenance']['source_documents']['results']}` and `{bundle['provenance']['source_documents']['independent_review']}`. Aggregate source SHA-256: `{bundle['provenance']['source_aggregate_sha256']}`. Bundle content SHA-256: `{bundle['content_sha256']}`.")

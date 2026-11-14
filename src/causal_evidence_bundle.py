@@ -348,7 +348,7 @@ def load_bundle(path: Path = DEFAULT_BUNDLE) -> dict[str, Any]:
         raise BundleError(f"causal evidence bundle not found: {path}")
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise BundleError(f"causal evidence bundle is not valid JSON: {exc}") from None
     return validate_bundle(value)
 

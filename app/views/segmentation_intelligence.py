@@ -1,11 +1,16 @@
 """Aggregate-only RFM and exploratory K-Means segmentation view."""
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 import altair as alt
 import pandas as pd
 import streamlit as st
 
 from segmentation_bundle import BundleError, DEFAULT_BUNDLE, load_bundle
+
+BUNDLE_ENV = "P3_SEGMENTATION_BUNDLE"
 
 
 @st.cache_data(show_spinner=False)
@@ -17,10 +22,11 @@ def _load(path: str) -> dict:
 def render() -> None:
     st.title("Segmentation Intelligence")
     try:
-        bundle = _load(str(DEFAULT_BUNDLE))
+        bundle_path = Path(os.environ.get(BUNDLE_ENV, str(DEFAULT_BUNDLE)))
+        bundle = _load(str(bundle_path))
     except BundleError as exc:
         st.error(f"The aggregate segmentation bundle could not be loaded, so no results are shown. {exc}")
-        st.caption(f"Expected file: {DEFAULT_BUNDLE.name}. Rebuild with `.venv/bin/python -m src.segmentation_bundle --build` when verified P3-007 aggregate sources are available.")
+        st.caption(f"Expected file: {Path(os.environ.get(BUNDLE_ENV, str(DEFAULT_BUNDLE))).name}. Rebuild with `.venv/bin/python -m src.segmentation_bundle --build` when verified P3-007 aggregate sources are available.")
         return
 
     data = bundle["data"]
@@ -36,7 +42,8 @@ def render() -> None:
     with tabs[2]:
         _render_comparison(data)
 
-    st.markdown("Continue the analyst workflow with [CRM Targeting Explorer](/targeting-explorer) for existing retrospective capacity comparisons.")
+    from page_registry import TARGETING_EXPLORER_PAGE
+    st.page_link(TARGETING_EXPLORER_PAGE, label="Continue to retrospective CRM targeting comparisons")
     st.caption("Segment purchase rates describe subsequent historical purchasing. They are not calibrated future probabilities and do not estimate response to marketing contact.")
     with st.expander("Bundle provenance and evidence limits"):
         provenance = data["provenance"]
@@ -222,7 +229,8 @@ def _rfm_cutpoints(rfm: dict) -> None:
         "frequency": ("Qualifying purchase occasions in prior 365 days", "occasions"),
         "monetary": ("Qualifying gross merchandise in prior 365 days", "GBP"),
     }
-    rows = [{"Dimension": labels[name][0], "March cutpoints": ", ".join(f"£{x:,.2f}" if labels[name][1] == "GBP" else f"{x:.2f} {labels[name][1]}" for x in values["original_scale"])} for name, values in c.items()]
+    dimension_order = ("recency", "frequency", "monetary")
+    rows = [{"Dimension": labels[name][0], "March cutpoints": ", ".join(f"£{x:,.2f}" if labels[name][1] == "GBP" else f"{x:.2f} {labels[name][1]}" for x in c[name]["original_scale"])} for name in dimension_order]
     with st.expander("How RFM scores and groups are assigned"):
         st.markdown("Scores use five nominal ordinal bands from March reference-period quintile cutpoints (ties assigned deterministically). Segment rules are applied in this order:")
         st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")

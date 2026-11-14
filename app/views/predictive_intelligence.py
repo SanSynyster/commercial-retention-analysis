@@ -25,6 +25,19 @@ PAIRED_INTERVAL_FORMATS = {
     "95% lower": "{:+.4f}",
     "95% upper": "{:+.4f}",
 }
+SHAP_FEATURE_LABELS = {
+    "qualifying_purchase_dates_365d": "Purchase dates (365 days)",
+    "qualifying_purchase_occasions_365d": "Purchase occasions (365 days)",
+    "qualifying_gross_merchandise_365d": "Gross merchandise (365 days)",
+    "qualifying_gross_merchandise_90d": "Gross merchandise (90 days)",
+    "days_since_last_qualifying_purchase": "Days since last qualifying purchase",
+    "qualifying_purchase_occasions_90d": "Purchase occasions (90 days)",
+    "median_interpurchase_interval_days_365d": "Median interpurchase interval (365 days)",
+    "qualifying_unique_product_count_365d": "Unique qualifying products (365 days)",
+    "average_qualifying_basket_quantity_365d": "Average basket quantity (365 days)",
+    "average_basket_product_diversity_365d": "Average basket product diversity (365 days)",
+    "average_qualifying_basket_value_365d": "Average basket value (365 days)",
+}
 
 
 @st.cache_data(show_spinner=False)
@@ -139,6 +152,8 @@ def _render_shap(bundle: dict) -> None:
     st.caption("P3-004 SHAP decomposes class-1 purchase probability. Mean absolute SHAP is average attribution magnitude, not causal importance.")
     periods = ["Development overall", "March", "April", "May", "June", "Exploratory holdout months"]
     selected_period = st.selectbox("SHAP population", periods, key="p3_shap_period")
+    if selected_period == "Exploratory holdout months":
+        st.caption("Previously examined exploratory holdout: approximately 200 explanation observations per month (July–November), all explained by one model fitted on January–June data.")
     importance = shap["overall_development"]
     if selected_period != "Development overall":
         series = shap["development_by_period"] if selected_period != "Exploratory holdout months" else shap["exploratory_holdout_by_month"]
@@ -149,14 +164,15 @@ def _render_shap(bundle: dict) -> None:
             month = "2011-" + {"March": "03", "April": "04", "May": "05", "June": "06"}[selected_period]
             chosen = next(p for p in series if p["period"] == month)
         importance = chosen["features"]
-    feature = st.selectbox("Feature", [r["feature"] for r in importance], key="p3_shap_feature")
+    feature = st.selectbox("Feature", [r["feature"] for r in importance], format_func=lambda name: SHAP_FEATURE_LABELS.get(name, name), key="p3_shap_feature")
+    feature_label = SHAP_FEATURE_LABELS.get(feature, feature)
     value_kind = st.radio("Attribution summary", ["Mean absolute contribution", "Mean signed contribution"], horizontal=True, key="p3_shap_value_kind")
     field = "mean_abs" if value_kind.startswith("Mean absolute") else "mean_signed"
     if field == "mean_signed" and "mean_signed" not in importance[0]:
         st.warning("Signed SHAP means are not available for this period-level aggregate.")
     else:
         plotted = sorted(importance, key=lambda x: x[field], reverse=(field == "mean_abs"))
-        data = pd.DataFrame([{"Feature": r["feature"], "Contribution": r[field]} for r in plotted])
+        data = pd.DataFrame([{"Feature": SHAP_FEATURE_LABELS.get(r["feature"], r["feature"]), "Contribution": r[field]} for r in plotted])
         chart = alt.Chart(data).mark_bar().encode(
             x=alt.X("Contribution:Q", title="Probability contribution"),
             y=alt.Y("Feature:N", sort="-x", title=None),
@@ -166,7 +182,7 @@ def _render_shap(bundle: dict) -> None:
         st.altair_chart(chart, width="stretch")
         focused = next((x for x in importance if x["feature"] == feature), None)
         if focused:
-            st.metric(f"{value_kind}: {feature}", f"{focused[field]:.4f} probability units", help="0.01 probability units = 1 percentage point.")
+            st.metric(f"{value_kind}: {feature_label}", f"{focused[field]:.4f} probability units", help="0.01 probability units = 1 percentage point.")
     if selected_period == "Development overall":
         trend_rows = []
         for period_data in shap["development_by_period"]:
@@ -183,7 +199,7 @@ def _render_shap(bundle: dict) -> None:
             color=alt.Color("Population:N", title=None),
             tooltip=["Period", "Population", alt.Tooltip("Mean absolute SHAP:Q", format=".4f")],
         ).properties(height=180)
-        st.caption(f"Fold-wise mean absolute SHAP for the selected feature: {feature}. Fold models/backgrounds differ; the holdout option is exploratory.")
+        st.caption(f"Fold-wise mean absolute SHAP for {feature_label}. Fold models/backgrounds differ; the holdout option is exploratory.")
         st.altair_chart(trend_chart, width="stretch")
     stability = shap["rank_stability"]
     stability_df = pd.DataFrame([{"Fold pair": f"{x['period_a']} · {x['period_b']}", "Spearman rank correlation": x["spearman"]} for x in stability])
@@ -191,7 +207,7 @@ def _render_shap(bundle: dict) -> None:
     with st.expander("Correlated features and interpretation"):
         st.markdown(shap["correlation_limit"])
         st.dataframe(pd.DataFrame(shap["correlated_groups"]), hide_index=True, width="stretch")
-        st.caption("The SHAP summaries use sampled validation rows and training-only backgrounds. Correlated predictors can share attribution; the forest profiles do not identify a causal mechanism.")
+        st.caption("The development explanations use 1,000 sampled validation observations per month and fold-specific training-only backgrounds. The exploratory July–November explanation summaries use approximately 200 observations per month and one model fitted on January–June data. Correlated predictors can share attribution; the forest profiles do not identify a causal mechanism.")
 
 
 def _render_calibration(bundle: dict) -> None:

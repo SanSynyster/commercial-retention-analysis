@@ -237,6 +237,8 @@ def load_bundle(path: Path = DEFAULT_BUNDLE) -> dict[str, Any]:
         raise BundleError(f"Segmentation bundle not found: {path}")
     try:
         bundle = json.loads(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise BundleError(f"Segmentation bundle could not be read: {exc}") from None
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise BundleError(f"Segmentation bundle is not valid JSON: {exc}") from None
     return validate_bundle(bundle)

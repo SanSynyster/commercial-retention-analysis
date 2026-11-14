@@ -65,7 +65,8 @@ def render() -> None:
         f"{_money(head['unattributed_positive_merchandise_gbp'])} of positive merchandise could not be attributed "
         "to an identified customer and is excluded from every customer measure."
     )
-    st.markdown("For March 2011 RFM profiles and supplementary clustering evidence, see [Segmentation Intelligence](/segmentation-intelligence).")
+    from page_registry import SEGMENTATION_INTELLIGENCE_PAGE
+    st.page_link(SEGMENTATION_INTELLIGENCE_PAGE, label="Explore March 2011 RFM profiles and supplementary clustering")
 
     _repeat_section(bundle, head)
     _concentration_section(bundle, head)
