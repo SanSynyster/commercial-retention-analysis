@@ -14,7 +14,7 @@ A local seven-page Streamlit application presenting research and planning views 
 
 ## Install and launch
 
-Use Python 3.11 from the repository root:
+Use Python 3.11 from the repository root. It matches `.python-version` and the version selected for the deployment dependency set.
 
 ```sh
 python3.11 -m venv .venv
@@ -22,13 +22,21 @@ python3.11 -m venv .venv
 .venv/bin/streamlit run app/streamlit_app.py
 ```
 
-The app runs locally and makes no network or database calls.
+`requirements-app.txt` includes only the application runtime dependencies from `app/requirements.txt`. The root `requirements.txt` remains the broader research environment; Community Cloud prefers `app/requirements.txt` next to the entrypoint, so it does not need to install research-only modelling packages. The direct app dependencies are pinned: Streamlit 1.66.1, Altair 6.3.0 and pandas 3.0.2. Streamlit's transitive dependencies supply its runtime requirements, including NumPy and PyArrow.
+
+The root `.streamlit/config.toml` enables headless operation, keeps CORS and XSRF protections enabled, and disables usage statistics. No host address or fixed port override is set; Streamlit uses its default port locally, and Community Cloud controls the hosted process binding. There are no application secrets or required secret values. The app runs locally without network or database calls.
+
+### Streamlit Community Cloud preparation
+
+Select `app/streamlit_app.py` as the entrypoint and Python 3.11 in Community Cloud's advanced settings. Community Cloud reads the app-specific `app/requirements.txt` in preference to the repository-root research dependency file. The committed `app_data/` JSON bundles are loaded from repository-relative paths. This repository is prepared for that deployment workflow, but has not been deployed or published.
 
 It does not perform live P3 model inference, train models at startup, read private source datasets, create customer-level scores or lists, or execute campaigns. It loads the committed aggregate bundles and calculates only the documented M4 planning scenarios in memory.
 
 ## Data and evidence limits
 
 The historical research pages read only reviewed aggregate JSON bundles in `app_data/`. The feasibility page calculates in memory using the M4 scenario functions. The app does not require raw transactions, customer-level records, prediction rows, targeting lists or model binaries.
+
+The UCI Online Retail and Online Retail II source datasets are identified as CC BY 4.0 in [data provenance and attribution](../docs/DATA_PROVENANCE.md). A public release must retain appropriate UCI/Chen attribution, link to CC BY 4.0, and disclose material corrected-V2 transformations; see the [P3-010A eligibility assessment](../docs/research/COMMERCIAL_DS_P3_010A_PUBLICATION_ELIGIBILITY.md). The Hillstrom page uses only aggregate experiment findings and does not include its source dataset. The challenge invites sharing findings, but redistribution permission for the source CSV remains unverified. Technical deployment preparation is not legal authorisation; that publication decision remains open.
 
 ### Optional bundle path overrides
 
@@ -81,7 +89,14 @@ Evidence labels distinguish historical description, historical prediction, devel
 
 ## Tests
 
-Run the focused application and M4 tests:
+The app-only environment installed from `requirements-app.txt` is sufficient for app startup and focused application/page tests. Tests for the full research repository also exercise modelling and data-analysis code, so install the separate research dependencies from the root `requirements.txt` in a research environment; do not treat the app-only dependency list as a complete test environment.
+
+```sh
+python3.11 -m venv .venv-research
+.venv-research/bin/python -m pip install -r requirements.txt
+```
+
+Run the focused application and M4 tests with the app environment:
 
 ```sh
 .venv/bin/python -m unittest \
@@ -101,10 +116,14 @@ Run the focused application and M4 tests:
   tests.test_crm_pilot_feasibility
 ```
 
-Run the full repository suite:
+Run the full repository suite with the research environment:
 
 ```sh
-.venv/bin/python -m unittest discover -s tests
+.venv-research/bin/python -m unittest discover -s tests
 ```
 
 Some research-input rebuild tests skip when the external source aggregates are unavailable. They are not needed to run the app or its page tests.
+
+## Release boundary
+
+This application presents historical observational UCI retail research and a separate historical Hillstrom randomised experiment. It does not provide live P3 model inference, current customer states, validated personalised uplift, customer-level drill-down, customer assignment, or campaign execution. Retrospective targeting and hypothetical experiment scenarios are analytical decision support only. The Hillstrom effect is not assumed to transport to UCI customers. See the P3-010A assessment for the outstanding source-data permission distinction; deployment readiness alone does not resolve it.
