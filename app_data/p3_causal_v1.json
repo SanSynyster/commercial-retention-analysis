@@ -1,0 +1,252 @@
+{
+  "bundle_name": "commercial_retention_p3_causal_evidence_aggregate",
+  "schema_version": 1,
+  "data": {
+    "design": {
+      "dataset_name": "MineThatData E-Mail Analytics and Data Mining Challenge (Hillstrom, 2008)",
+      "observations": 64000,
+      "arms": [
+        {
+          "label": "Men's email",
+          "assigned": 21307
+        },
+        {
+          "label": "Women's email",
+          "assigned": 21387
+        },
+        {
+          "label": "No email",
+          "assigned": 21306
+        }
+      ],
+      "outcome_window": "Two weeks after assignment",
+      "assignment_interpretation": "Randomized assignment-based intent-to-treat; delivery, opening and reading were not observed.",
+      "partition_sizes": {
+        "Development": 12800,
+        "Locked test": 12800,
+        "Training": 38400
+      },
+      "primary_pairwise_partition_sizes": {
+        "Training": 25568,
+        "Development": 8522,
+        "Locked test": 8523
+      },
+      "separate_from_uci": true
+    },
+    "primary": {
+      "contrast": "Men's email assignment vs no email assignment",
+      "outcome": "Website visit during the original two-week window",
+      "n_treated": 4262,
+      "events_treated": 802,
+      "rate_treated": 0.18817456593148757,
+      "n_control": 4261,
+      "events_control": 454,
+      "rate_control": 0.10654775874207932,
+      "risk_difference_pp": 8.162680718940825,
+      "ci95_low_pp": 6.6670193140194165,
+      "ci95_high_pp": 9.658481609273203,
+      "exact_two_sided_randomization_p": 1.5255029454841662e-26,
+      "additional_visits_per_1000": 81.62680718940825,
+      "ci_method": "Newcombe hybrid-score interval using uncorrected Wilson limits",
+      "test_method": "exact conditional randomization test; two-sided absolute risk difference"
+    },
+    "secondary_visits": [
+      {
+        "contrast": "Women's email vs no email",
+        "n_treated": 4277,
+        "events_treated": 663,
+        "rate_treated": 0.15501519756838905,
+        "n_control": 4261,
+        "events_control": 454,
+        "rate_control": 0.10654775874207932,
+        "risk_difference_pp": 4.846743882630973,
+        "ci95_low_pp": 3.4199228396452233,
+        "ci95_high_pp": 6.274596840218137,
+        "holm_adjusted_p": 2.731874623955844e-10
+      },
+      {
+        "contrast": "Men's email vs Women's email",
+        "n_treated": 4262,
+        "events_treated": 802,
+        "rate_treated": 0.18817456593148757,
+        "n_control": 4277,
+        "events_control": 663,
+        "rate_control": 0.15501519756838905,
+        "risk_difference_pp": 3.315936836309852,
+        "ci95_low_pp": 1.7172365063543458,
+        "ci95_high_pp": 4.9138461674560325,
+        "holm_adjusted_p": 0.0003592759945486067
+      }
+    ],
+    "secondary_other_outcomes_note": "The predeclared secondary conversion and spend comparisons were inconclusive after Holm adjustment; this does not establish zero effect.",
+    "development": {
+      "eligible_rows": 8522,
+      "training_pairwise_rows": 25568,
+      "budget": 0.2,
+      "selected_rows_at_budget": 1705,
+      "expected_random_visits_per_1000": 15.421330182492165,
+      "selected_reference": "constant_ate",
+      "locked_test_candidate_diagnostics_run": false,
+      "locked_test_model_fit_calls": 0,
+      "comparisons": [
+        {
+          "candidate": "constant_ate",
+          "label": "Seeded constant-ATE draw",
+          "family": "Reference baseline",
+          "description": "The selected constant-effect score produces random tie-breaking; this is one seeded draw.",
+          "delta_visits_per_1000": -3.610318436901953,
+          "ci95_low": -9.04401426795207,
+          "ci95_high": 2.865669761220393,
+          "formal_promotion_candidate": false
+        },
+        {
+          "candidate": "history_recency",
+          "label": "Historical behavior",
+          "family": "Historical benchmark",
+          "description": "Ranks prior history and recency; this is not a CATE estimator.",
+          "delta_visits_per_1000": 2.490116806172275,
+          "ci95_low": -3.451260269441277,
+          "ci95_high": 9.003268488164057,
+          "formal_promotion_candidate": false
+        },
+        {
+          "candidate": "t_logistic",
+          "label": "Logistic T-learner",
+          "family": "Logistic",
+          "description": "Separate logistic outcome models for treatment and control.",
+          "delta_visits_per_1000": 0.9432036438233662,
+          "ci95_low": -5.371960400345438,
+          "ci95_high": 7.846342220071279,
+          "formal_promotion_candidate": true
+        },
+        {
+          "candidate": "s_logistic",
+          "label": "Logistic S-learner",
+          "family": "Logistic",
+          "description": "One logistic outcome model with assignment as an input.",
+          "delta_visits_per_1000": 1.9302750621377138,
+          "ci95_low": -4.663785039697194,
+          "ci95_high": 8.367830888765194,
+          "formal_promotion_candidate": true
+        },
+        {
+          "candidate": "x_logistic",
+          "label": "Logistic X-learner",
+          "family": "Logistic",
+          "description": "Logistic outcome models with an X-learner effect stage.",
+          "delta_visits_per_1000": 2.046279358403173,
+          "ci95_low": -4.609063341770683,
+          "ci95_high": 8.743794440415348,
+          "formal_promotion_candidate": true
+        },
+        {
+          "candidate": "dr_logistic",
+          "label": "Logistic DR-learner",
+          "family": "Logistic",
+          "description": "Cross-fitted doubly robust learner with logistic nuisance models.",
+          "delta_visits_per_1000": 1.5503053679407561,
+          "ci95_low": -5.242218677310928,
+          "ci95_high": 7.94953907946383,
+          "formal_promotion_candidate": true
+        },
+        {
+          "candidate": "t_hgb",
+          "label": "HGB T-learner",
+          "family": "HistGradientBoosting",
+          "description": "Separate HGB outcome models for treatment and control.",
+          "delta_visits_per_1000": -0.7468571576429786,
+          "ci95_low": -6.852103304586764,
+          "ci95_high": 6.380670900451522,
+          "formal_promotion_candidate": true
+        },
+        {
+          "candidate": "s_hgb",
+          "label": "HGB S-learner",
+          "family": "HistGradientBoosting",
+          "description": "One HGB outcome model with assignment as an input.",
+          "delta_visits_per_1000": 0.9959456862221259,
+          "ci95_low": -5.629426870128511,
+          "ci95_high": 7.435580942504013,
+          "formal_promotion_candidate": true
+        },
+        {
+          "candidate": "x_hgb",
+          "label": "HGB X-learner",
+          "family": "HistGradientBoosting",
+          "description": "HGB outcome models with an X-learner effect stage.",
+          "delta_visits_per_1000": 0.9834377026356131,
+          "ci95_low": -5.725825306989172,
+          "ci95_high": 7.1882603937454945,
+          "formal_promotion_candidate": true
+        },
+        {
+          "candidate": "dr_hgb",
+          "label": "HGB DR-learner",
+          "family": "HistGradientBoosting",
+          "description": "Cross-fitted doubly robust learner with HGB nuisance models.",
+          "delta_visits_per_1000": 4.928792087720978,
+          "ci95_low": -2.3449672282176306,
+          "ci95_high": 11.265234963100848,
+          "formal_promotion_candidate": true
+        },
+        {
+          "candidate": "t_xgboost_optional",
+          "label": "XGBoost T-learner (supplementary)",
+          "family": "Supplementary XGBoost",
+          "description": "Supplementary descriptive model; not promotion-eligible.",
+          "delta_visits_per_1000": -1.2190400401958443,
+          "ci95_low": -7.483662249717085,
+          "ci95_high": 5.548366360300895,
+          "formal_promotion_candidate": false
+        }
+      ],
+      "evidence_label": "Exploratory development \u2014 CATE and targeting-policy evaluation",
+      "outcome_unit": "Incremental website visits per 1,000 pairwise-eligible experiment rows, relative to expected random targeting at the same 20% budget."
+    },
+    "test_policy": {
+      "budget": 0.2,
+      "increment_visits_per_1000": 16.32536143788165,
+      "ci95_low_per_1000": 13.334038628038833,
+      "ci95_high_per_1000": 19.316963218546405
+    },
+    "interpretation": {
+      "average_assignment_effect": "The locked randomized test supports an average increase in two-week website visits for assignment to this historical Men's email campaign.",
+      "individual_response": "Development CATE models did not establish reliable person-level treatment-effect ranking; CATE scores are predictions, not observed individual causal effects.",
+      "targeting_policy": "No personalised model established reliable superiority over expected random targeting at the 20% development budget; constant ATE / expected random targeting remained the research reference.",
+      "heterogeneity": "No uplift improvement was demonstrated; this is not proof that treatment effects are homogeneous.",
+      "transport": "Hillstrom is a separate experimental population. Its effects and uplift predictions do not directly apply to UCI Online Retail II customers or current campaigns."
+    },
+    "evidence": {
+      "design": "Historical description",
+      "primary": "Confirmatory randomised evidence \u2014 locked test",
+      "secondary": "Secondary randomised \u2014 Holm-adjusted comparisons",
+      "development": "Exploratory development \u2014 CATE and targeting-policy evaluation"
+    },
+    "provenance": {
+      "sources": {
+        "p3_008a": {
+          "report": "docs/research/COMMERCIAL_DS_P3_008A_CAUSAL_DATASET_AND_DESIGN.md",
+          "source_file": "source_data/hillstrom/p3_008a_outputs/hillstrom_audit_aggregate_private.json",
+          "sha256_raw_file": "58a33907a118990ae12f91f7d560527d84034d06dfb581f02461065e5f756c70"
+        },
+        "p3_008b": {
+          "report": "docs/research/COMMERCIAL_DS_P3_008B_CAUSAL_ML_AND_UPLIFT.md",
+          "source_file": "source_data/hillstrom/p3_008b_outputs/hillstrom_uplift_aggregate_private.json",
+          "sha256_raw_file": "baee1318cd1e21c8b51fed04340184dbf68c4cc7e9054bc1a7a87e27b58ff362"
+        },
+        "p3_008c": {
+          "report": "docs/research/COMMERCIAL_DS_P3_008C_LOCKED_TEST_CAUSAL_EVALUATION.md",
+          "source_file": "source_data/hillstrom/p3_008c_outputs/hillstrom_locked_test_aggregate_private.json",
+          "sha256_raw_file": "ac22045cbb94379295cbd5950ab017608d2d10d3bde5575c854ed8cc2c7fb3ac"
+        },
+        "p3_008d": {
+          "report": "docs/research/COMMERCIAL_DS_P3_008D_CAUSAL_RESEARCH_SYNTHESIS.md",
+          "sha256_report": "af639847c792ccfcf8850e0f91b8cdce4aa99ba29fb6ad52fa88799e2fca9ba1"
+        }
+      },
+      "dataset_sha256": "0e5893329d8b93cefecc571777672028290ab69865718020c78c7284f291aece",
+      "split_sha256": "0f18d512272cee14da65940cb52a9458eb35e357489e745339ac88cd9a9a00ce"
+    }
+  },
+  "content_sha256": "720a35d13c1de8d5f6db62bacf64bf7945b072a606c3b5ec19d5ea5015c2da4b"
+}

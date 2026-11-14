@@ -1,6 +1,6 @@
 # Customer Intelligence & Decision Support
 
-A local Streamlit application presenting research and planning views built from corrected Online Retail II analysis. Historical pages describe or predict purchasing in the 2009–2011 data; they do not show current CRM customers or estimate the effect of marketing contact. The experiment page is a hypothetical calculator, not a launched campaign.
+A local Streamlit application presenting research and planning views built from corrected Online Retail II analysis and a separate historical randomized email experiment. UCI-based pages describe or predict purchasing in the 2009–2011 data; they do not show current CRM customers. The causal evidence page summarizes Hillstrom assignment effects and does not provide UCI customer scores or campaign execution. The experiment-feasibility page is a hypothetical calculator, not a launched campaign.
 
 ## Pages
 
@@ -8,6 +8,7 @@ A local Streamlit application presenting research and planning views built from 
 - **Purchase Propensity** — separate M1 new-customer and M2 established-customer prediction results, plus exploratory calibration. M1 and M2 are different tasks; calibration reuses a previously examined holdout.
 - **Predictive Intelligence** — aggregate-only P3 M2 comparisons for Logistic C, Random Forest, HistGradientBoosting, XGBoost, LightGBM and frequency; global Random Forest SHAP and stability summaries; P3-005 calibration diagnostics. Development results used for selection are separated from the previously examined July–November exploratory replay.
 - **Segmentation Intelligence** — March 2011 historical RFM profiles and subsequent April–June purchase behaviour, with the selected three-cluster K-Means solution as supplementary exploratory evidence. It links to the existing retrospective CRM Targeting Explorer; it does not assign current customers or estimate contact effects.
+- **Causal Evidence & Experimentation** — aggregate-only Hillstrom randomized-study evidence, with the locked-test assignment effect and Holm-adjusted secondary visit comparisons separated from exploratory development uplift-policy comparisons. Hillstrom is distinct from the observational UCI retail population; no customer scoring or campaign execution is provided.
 - **CRM Targeting Explorer** — retrospective purchase capture for four policies at the evaluated 5%, 10% and 20% capacities. Purchase propensity is not causal CRM uplift.
 - **CRM Experiment Feasibility** — hypothetical enrollment, allocation, MDE and economics for the proposed M4 randomized pilot. No treatment effect or business input is estimated from the historical data.
 
@@ -49,6 +50,16 @@ The builder uses explicit source paths and pinned SHA-256 values; it does not se
 
 RFM remains the primary CRM-facing grouping; K-Means k=3 is supplementary exploratory evidence. April–June rates are retrospective outcomes, not calibrated future probabilities. Reviewer-derived April–June AUC diagnostics mentioned in the research report are absent from the verified aggregate source and are not displayed. See [the P3-009C integration report](../docs/research/COMMERCIAL_DS_P3_009C_SEGMENTATION_CRM_INTEGRATION.md) for provenance, results and limitations.
 
+### P3 causal evidence bundle
+
+`app_data/p3_causal_v1.json` is a verified aggregate-only projection of the exact P3-008A audit, P3-008B development, and P3-008C locked-test aggregates, with P3-008D interpretation traceable to its committed synthesis report. The builder pins the raw SHA-256 for each exact source file and verifies the frozen dataset/split hashes. It does not read the raw Hillstrom CSV, the P3-008A split-assignment CSV, the P3-008B development-prediction Parquet, or the P3-008C test-row Parquet. Rebuild when the authorized sibling aggregate sources are available:
+
+```sh
+.venv/bin/python -m src.causal_evidence_bundle --build
+```
+
+The page labels the primary visit assignment effect as confirmatory locked-test evidence, secondary visit contrasts as Holm-adjusted, and CATE/policy comparisons as exploratory development. Its only development policy-value budget is the verified 20% comparison. No personalized policy was evaluated on the locked test; conversion/spend contrasts were inconclusive. See [the P3-009D integration report](../docs/research/COMMERCIAL_DS_P3_009D_CAUSAL_EVIDENCE_INTEGRATION.md) for hashes, evidence and limitations.
+
 The underlying retail data are observational and historical, with a partial source endpoint in December 2011. First observed purchase is not verified acquisition; gross merchandise is not net sales, margin or profit; and descriptive groups are not validated CRM segments. Prediction and retrospective targeting metrics measure purchasing patterns, not treatment response. The July–November UCI holdout was previously examined and is exploratory, not untouched confirmation. RF is a development reference, not prospectively validated deployment inference; calibration remains a provisional research candidate, and SHAP is predictive attribution rather than causal importance. Actual eligibility, consent, contact rules, margin variance and costs are not established. See the root [project README](../README.md) and [data provenance and attribution](../docs/DATA_PROVENANCE.md) for research definitions and source terms.
 
 ## Tests
@@ -65,6 +76,8 @@ Run the focused application and M4 tests:
   tests.test_predictive_intelligence_page \
   tests.test_segmentation_bundle \
   tests.test_segmentation_intelligence_page \
+  tests.test_causal_evidence_bundle \
+  tests.test_causal_evidence_page \
   tests.test_targeting_bundle \
   tests.test_experiment_feasibility_page \
   tests.test_crm_pilot_feasibility
