@@ -1,0 +1,1028 @@
+{
+  "bundle_name": "commercial_retention_p3_predictive_aggregate",
+  "bundle_version": "1.0.0",
+  "calibration": {
+    "deployment_status": "not selected for deployment; uncalibrated RF remains reference",
+    "development": {
+      "intercept_only": {
+        "average_precision": 0.5479164018653374,
+        "brier": 0.12188961031187878,
+        "log_loss": 0.39583802415910113,
+        "mean_predicted": 0.19982864824051494,
+        "observed_prevalence": 0.19350358768613532,
+        "roc_auc": 0.7827449053872342
+      },
+      "monthly": [
+        {
+          "brier_difference": 0.0006479203410450773,
+          "intercept_only_brier": 0.11556631449187835,
+          "intercept_only_log_loss": 0.3816637823637131,
+          "month": "2011-04",
+          "uncalibrated_brier": 0.11491839415083327,
+          "uncalibrated_log_loss": 0.3810641340497836
+        },
+        {
+          "brier_difference": -0.004806438913641187,
+          "intercept_only_brier": 0.12527874202295847,
+          "intercept_only_log_loss": 0.40367656022389165,
+          "month": "2011-05",
+          "uncalibrated_brier": 0.13008518093659965,
+          "uncalibrated_log_loss": 0.4177771756699197
+        },
+        {
+          "brier_difference": -0.0014863206625581188,
+          "intercept_only_brier": 0.1248189191672462,
+          "intercept_only_log_loss": 0.40216312564121376,
+          "month": "2011-06",
+          "uncalibrated_brier": 0.12630523982980432,
+          "uncalibrated_log_loss": 0.4066987650423326
+        }
+      ],
+      "paired_difference_intercept_minus_uncalibrated": {
+        "brier": {
+          "ci95": [
+            -0.002619145144888652,
+            -0.0011055361071835592
+          ],
+          "estimate": -0.001881655750349892
+        },
+        "log_loss": {
+          "ci95": [
+            -0.008353094795541437,
+            -0.0038434763056517233
+          ],
+          "estimate": -0.006012142694412867
+        }
+      },
+      "uncalibrated": {
+        "average_precision": 0.5478670976982482,
+        "brier": 0.12377126606222867,
+        "log_loss": 0.40185016685351405,
+        "mean_predicted": 0.15656903210223294,
+        "observed_prevalence": 0.19350358768613532,
+        "roc_auc": 0.7826542359961373
+      }
+    },
+    "exploratory_holdout": {
+      "intercept_only": {
+        "average_precision": 0.5758250171373298,
+        "brier": 0.14187295321100207,
+        "log_loss": 0.4465932428343635,
+        "mean_predicted": 0.21979366387637506,
+        "observed_prevalence": 0.2349575489110373,
+        "roc_auc": 0.7731894480521019
+      },
+      "monthly": [
+        {
+          "intercept_only_brier": 0.11886187958720906,
+          "month": "2011-07",
+          "uncalibrated_brier": 0.11799062185890281
+        },
+        {
+          "intercept_only_brier": 0.11295722049982648,
+          "month": "2011-08",
+          "uncalibrated_brier": 0.11253437607757412
+        },
+        {
+          "intercept_only_brier": 0.14342092413400262,
+          "month": "2011-09",
+          "uncalibrated_brier": 0.14873269511865042
+        },
+        {
+          "intercept_only_brier": 0.15105245892802777,
+          "month": "2011-10",
+          "uncalibrated_brier": 0.15503438165729508
+        },
+        {
+          "intercept_only_brier": 0.18275841409991406,
+          "month": "2011-11",
+          "uncalibrated_brier": 0.1951529481114353
+        }
+      ],
+      "uncalibrated": {
+        "average_precision": 0.5758250171373298,
+        "brier": 0.14596114227816756,
+        "log_loss": 0.4600927029694875,
+        "mean_predicted": 0.1755473995135487,
+        "observed_prevalence": 0.2349575489110373,
+        "roc_auc": 0.7731894480521019
+      }
+    },
+    "interpretation": "Monotone intercept adjustment does not change within-month ranking; calibration gains are not uniform across validation months and are not prospective evidence.",
+    "provisional_candidate": "intercept-only recalibration",
+    "reference": "uncalibrated Random Forest"
+  },
+  "comparisons": {
+    "Exploratory holdout: HistGradientBoosting - Logistic C": {
+      "average_precision": {
+        "ci95": [
+          0.0075259618115845976,
+          0.012594869202079811
+        ],
+        "estimate": 0.009989445207022718
+      },
+      "roc_auc": {
+        "ci95": [
+          0.006216459255864437,
+          0.010363239190850098
+        ],
+        "estimate": 0.008223536150749
+      }
+    },
+    "Exploratory holdout: Random Forest - Logistic C": {
+      "average_precision": {
+        "ci95": [
+          0.006593545496513345,
+          0.013151064451940482
+        ],
+        "estimate": 0.009876116693991577
+      },
+      "roc_auc": {
+        "ci95": [
+          0.0050664747988029,
+          0.009491852765187058
+        ],
+        "estimate": 0.007203469431459997
+      }
+    },
+    "HistGradientBoosting - Logistic C": {
+      "average_precision": {
+        "ci95": [
+          0.003381329212280018,
+          0.012153850473946353
+        ],
+        "estimate": 0.007595669890680501
+      },
+      "roc_auc": {
+        "ci95": [
+          0.0027110699618267758,
+          0.008118104573858328
+        ],
+        "estimate": 0.0054056921431955285
+      }
+    },
+    "LightGBM - HistGradientBoosting": {
+      "average_precision": {
+        "ci95": [
+          -0.002073617589679666,
+          0.003251752527995266
+        ],
+        "estimate": 0.0005421804625921345
+      },
+      "roc_auc": {
+        "ci95": [
+          -0.0018183969357243063,
+          0.0018329696795825379
+        ],
+        "estimate": 2.7445411399096287e-07
+      }
+    },
+    "LightGBM - Random Forest": {
+      "average_precision": {
+        "ci95": [
+          -0.00511057918732361,
+          0.0005834777273652169
+        ],
+        "estimate": -0.002292182511120844
+      },
+      "roc_auc": {
+        "ci95": [
+          -0.0033993383984649963,
+          -3.0677839657654304e-08
+        ],
+        "estimate": -0.0017350769527619825
+      }
+    },
+    "Random Forest - Logistic C": {
+      "average_precision": {
+        "ci95": [
+          0.005850600978033665,
+          0.015124055447624673
+        ],
+        "estimate": 0.01043003286439348
+      },
+      "roc_auc": {
+        "ci95": [
+          0.004151924773223512,
+          0.010185529049967388
+        ],
+        "estimate": 0.007141043550071502
+      }
+    },
+    "XGBoost - HistGradientBoosting": {
+      "average_precision": {
+        "ci95": [
+          -0.0011145097645691743,
+          0.004369596820830486
+        ],
+        "estimate": 0.001393406738473102
+      },
+      "roc_auc": {
+        "ci95": [
+          -0.0007586692465199746,
+          0.0023796916402108455
+        ],
+        "estimate": 0.0007623896162020083
+      }
+    },
+    "XGBoost - Random Forest": {
+      "average_precision": {
+        "ci95": [
+          -0.003785660825127124,
+          0.0011337162167849412
+        ],
+        "estimate": -0.0014409562352398764
+      },
+      "roc_auc": {
+        "ci95": [
+          -0.002529988410577777,
+          0.0006784387736571386
+        ],
+        "estimate": -0.0009729617906739652
+      }
+    }
+  },
+  "content_sha256": "40dba007ed5c76ba595413ecdf3ab7f0e24245f13a11d7de9d23a6f8fe57ddfd",
+  "evidence": {
+    "analysis_type": "Historical prediction",
+    "causal_status": "Predictive, not causal; no confirmatory randomised label applies to this page.",
+    "development": "Development \u2014 used for model selection",
+    "holdout": "Previously examined holdout \u2014 exploratory"
+  },
+  "models": {
+    "Frequency": {
+      "development": {
+        "average_precision": 0.4949116797181674,
+        "brier_score": null,
+        "log_loss": null,
+        "roc_auc": 0.762253047834893,
+        "top_decile_capture": 0.32638676064970884,
+        "top_decile_precision": 0.6181079512478236
+      },
+      "holdout": {
+        "average_precision": 0.5251778689827185,
+        "brier_score": null,
+        "log_loss": null,
+        "roc_auc": 0.7453522022292828,
+        "top_decile_capture": 0.29320502749410843,
+        "top_decile_precision": 0.6880184331797236
+      },
+      "selection_status": "operational ranking baseline"
+    },
+    "HistGradientBoosting": {
+      "development": {
+        "average_precision": 0.5366511102640805,
+        "brier_score": 0.12271152803484311,
+        "log_loss": 0.39980940235540285,
+        "roc_auc": 0.7806332618098594,
+        "top_decile_capture": 0.3355807539074471,
+        "top_decile_precision": 0.6355194428322692
+      },
+      "holdout": {
+        "average_precision": 0.575938345650361,
+        "brier_score": 0.14622771863096154,
+        "log_loss": 0.4602690108526312,
+        "roc_auc": 0.7742095147713909,
+        "top_decile_capture": 0.2983110761979576,
+        "top_decile_precision": 0.7
+      },
+      "mean_fold_average_precision": 0.5374100228557308,
+      "selected_configuration": {
+        "early_stopping": false,
+        "l2_regularization": 1.0,
+        "learning_rate": 0.05,
+        "max_iter": 100,
+        "max_leaf_nodes": 7,
+        "min_samples_leaf": 50
+      },
+      "selection_status": "configuration selected within family; RF remains reference"
+    },
+    "LightGBM": {
+      "development": {
+        "average_precision": 0.5371932907266727,
+        "brier_score": 0.12253734287257646,
+        "log_loss": 0.4003953182305559,
+        "roc_auc": 0.7806335362639734,
+        "top_decile_capture": 0.3383389518847686,
+        "top_decile_precision": 0.640742890307603
+      },
+      "holdout": {
+        "average_precision": 0.5778076398339143,
+        "brier_score": 0.1458073454599156,
+        "log_loss": 0.4602465396368809,
+        "roc_auc": 0.7742557627234281,
+        "top_decile_capture": 0.2994893951296151,
+        "top_decile_precision": 0.7027649769585254
+      },
+      "mean_fold_average_precision": 0.5373008771051685,
+      "selected_configuration": {
+        "colsample_bytree": 0.9,
+        "learning_rate": 0.03,
+        "min_child_samples": 50,
+        "n_estimators": 200,
+        "num_leaves": 15,
+        "reg_alpha": 0.1,
+        "reg_lambda": 5.0,
+        "subsample": 0.9,
+        "subsample_freq": 1
+      },
+      "selection_status": "configuration selected for exploratory family comparison; not promoted over RF"
+    },
+    "Logistic C": {
+      "development": {
+        "average_precision": 0.5290554403734,
+        "brier_score": 0.12368631300159097,
+        "log_loss": 0.40273829925759413,
+        "roc_auc": 0.7752275696666638,
+        "top_decile_capture": 0.330983757278578,
+        "top_decile_precision": 0.6268136970400464
+      },
+      "holdout": {
+        "average_precision": 0.5659489004433382,
+        "brier_score": 0.1474375620294117,
+        "log_loss": 0.46489289626683283,
+        "roc_auc": 0.7659859786206419,
+        "top_decile_capture": 0.2955616653574234,
+        "top_decile_precision": 0.6935483870967742
+      },
+      "selection_status": "frozen logistic baseline"
+    },
+    "Random Forest": {
+      "development": {
+        "average_precision": 0.5394854732377935,
+        "brier_score": 0.12233698641001399,
+        "log_loss": 0.3988716498172425,
+        "roc_auc": 0.7823686132167353,
+        "top_decile_capture": 0.33803248544284403,
+        "top_decile_precision": 0.6401625072547882
+      },
+      "holdout": {
+        "average_precision": 0.5758250171373298,
+        "brier_score": 0.14596114227816756,
+        "log_loss": 0.4600927029694875,
+        "roc_auc": 0.7731894480521019,
+        "top_decile_capture": 0.2994893951296151,
+        "top_decile_precision": 0.7027649769585254
+      },
+      "mean_fold_average_precision": 0.5394160032152457,
+      "selected_configuration": {
+        "class_weight": null,
+        "max_depth": 8,
+        "max_features": "sqrt",
+        "min_samples_leaf": 20,
+        "n_estimators": 200
+      },
+      "selection_status": "P3-002 retained development reference"
+    },
+    "XGBoost": {
+      "development": {
+        "average_precision": 0.5380445170025536,
+        "brier_score": 0.12245792150497437,
+        "log_loss": 0.39989279343933426,
+        "roc_auc": 0.7813956514260614,
+        "top_decile_capture": 0.3386454183266932,
+        "top_decile_precision": 0.6413232733604178
+      },
+      "holdout": {
+        "average_precision": 0.5771945758949568,
+        "brier_score": 0.14588171243667603,
+        "log_loss": 0.4602716923482965,
+        "roc_auc": 0.7745041537282162,
+        "top_decile_capture": 0.30106048703849175,
+        "top_decile_precision": 0.7064516129032258
+      },
+      "mean_fold_average_precision": 0.538609241836203,
+      "selected_configuration": {
+        "colsample_bytree": 0.8,
+        "learning_rate": 0.03,
+        "max_depth": 4,
+        "min_child_weight": 10,
+        "n_estimators": 250,
+        "reg_alpha": 0.1,
+        "reg_lambda": 5.0,
+        "subsample": 0.85
+      },
+      "selection_status": "configuration selected for exploratory family comparison; not promoted over RF"
+    }
+  },
+  "provenance": {
+    "privacy": "Aggregate-safe metrics only; no customer rows, identifiers, or predictions included.",
+    "sources": {
+      "p3_002": {
+        "report": "docs/research/COMMERCIAL_DS_P3_002_ADVANCED_ML_BENCHMARK.md",
+        "sha256_raw_file": "f2594cb0095ee769c65220996bfbbcc90ac2cc923cf7453c5eebb53d90df28cb",
+        "source_file": "source_data/uci_online_retail_ii/p3_002_outputs/p3_002_aggregate_results.json"
+      },
+      "p3_003": {
+        "report": "docs/research/COMMERCIAL_DS_P3_003_XGBOOST_LIGHTGBM_BENCHMARK.md",
+        "sha256_raw_file": "0d9280d4926b3819df02b33cb2c67d7decc560db57517ba8add65964e811d0d5",
+        "source_file": "source_data/uci_online_retail_ii/p3_003_outputs/p3_003_aggregate_results.json"
+      },
+      "p3_004": {
+        "report": "docs/research/COMMERCIAL_DS_P3_004_SHAP_EXPLAINABILITY.md",
+        "sha256_raw_file": "a04d7cd1919af7ae9304c4d2b3817597558680f7a3d82971de23fb2711919d47",
+        "source_file": "source_data/uci_online_retail_ii/p3_004_outputs/p3_004_aggregate_results.json"
+      },
+      "p3_005": {
+        "report": "docs/research/COMMERCIAL_DS_P3_005_CALIBRATION_UNCERTAINTY.md",
+        "sha256_raw_file": "d4fa81bbb8bae9c484917981fa15fc94591668f96d427926030fe25d29b72484",
+        "source_file": "source_data/uci_online_retail_ii/p3_005_outputs/p3_005_aggregate_results.json"
+      }
+    }
+  },
+  "schema_version": 1,
+  "selection": {
+    "criterion": "Bounded configurations selected using mean average precision across the four development folds.",
+    "decision": "Retain RF as the development reference; XGBoost and LightGBM did not meet the predeclared adoption criteria.",
+    "reference_model": "Random Forest",
+    "uncertainty_note": "Tree-model differences are small; available paired intervals are conditional on fitted models and do not include selection or future-period uncertainty."
+  },
+  "shap": {
+    "correlated_groups": [
+      {
+        "features": [
+          "qualifying_gross_merchandise_365d",
+          "qualifying_purchase_dates_365d",
+          "qualifying_purchase_occasions_365d"
+        ],
+        "mean_abs_net_group_shap_probability": 0.08213020552797003,
+        "mean_signed_net_group_shap_probability": -0.005230561166666468,
+        "sum_of_member_mean_abs_shap_probability": 0.08529618466357969
+      },
+      {
+        "features": [
+          "days_since_last_qualifying_purchase",
+          "qualifying_gross_merchandise_90d",
+          "qualifying_purchase_occasions_90d"
+        ],
+        "mean_abs_net_group_shap_probability": 0.040137452564311206,
+        "mean_signed_net_group_shap_probability": -0.010340964645330282,
+        "sum_of_member_mean_abs_shap_probability": 0.04440325557791816
+      },
+      {
+        "features": [
+          "average_qualifying_basket_quantity_365d",
+          "average_qualifying_basket_value_365d"
+        ],
+        "mean_abs_net_group_shap_probability": 0.003649053927902355,
+        "mean_signed_net_group_shap_probability": -5.563344222732444e-05,
+        "sum_of_member_mean_abs_shap_probability": 0.004889568097175056
+      }
+    ],
+    "correlation_limit": "Correlated predictors can share attribution; SHAP is predictive attribution, not causal importance.",
+    "development_by_period": [
+      {
+        "features": [
+          {
+            "feature": "qualifying_purchase_dates_365d",
+            "mean_abs": 0.041966814690216736
+          },
+          {
+            "feature": "qualifying_purchase_occasions_365d",
+            "mean_abs": 0.02829424791069574
+          },
+          {
+            "feature": "qualifying_gross_merchandise_365d",
+            "mean_abs": 0.018280582757822204
+          },
+          {
+            "feature": "qualifying_gross_merchandise_90d",
+            "mean_abs": 0.016998427849793062
+          },
+          {
+            "feature": "days_since_last_qualifying_purchase",
+            "mean_abs": 0.016604116451989736
+          },
+          {
+            "feature": "qualifying_purchase_occasions_90d",
+            "mean_abs": 0.013950947635035082
+          },
+          {
+            "feature": "median_interpurchase_interval_days_365d",
+            "mean_abs": 0.007069742154822535
+          },
+          {
+            "feature": "qualifying_unique_product_count_365d",
+            "mean_abs": 0.006204415266484917
+          },
+          {
+            "feature": "average_qualifying_basket_quantity_365d",
+            "mean_abs": 0.004914926313343386
+          },
+          {
+            "feature": "average_basket_product_diversity_365d",
+            "mean_abs": 0.004841208367920857
+          },
+          {
+            "feature": "average_qualifying_basket_value_365d",
+            "mean_abs": 0.0020527981363478807
+          }
+        ],
+        "n_explained": 1000,
+        "period": "2011-03"
+      },
+      {
+        "features": [
+          {
+            "feature": "qualifying_purchase_dates_365d",
+            "mean_abs": 0.03471997924919475
+          },
+          {
+            "feature": "qualifying_purchase_occasions_365d",
+            "mean_abs": 0.028840502135606665
+          },
+          {
+            "feature": "qualifying_gross_merchandise_365d",
+            "mean_abs": 0.020734565004855873
+          },
+          {
+            "feature": "days_since_last_qualifying_purchase",
+            "mean_abs": 0.017401622875298735
+          },
+          {
+            "feature": "qualifying_gross_merchandise_90d",
+            "mean_abs": 0.012719919832938546
+          },
+          {
+            "feature": "qualifying_purchase_occasions_90d",
+            "mean_abs": 0.010072208150179895
+          },
+          {
+            "feature": "median_interpurchase_interval_days_365d",
+            "mean_abs": 0.005316326502241916
+          },
+          {
+            "feature": "qualifying_unique_product_count_365d",
+            "mean_abs": 0.0041103615613820015
+          },
+          {
+            "feature": "average_basket_product_diversity_365d",
+            "mean_abs": 0.0028225196660019007
+          },
+          {
+            "feature": "average_qualifying_basket_value_365d",
+            "mean_abs": 0.002154462447845596
+          },
+          {
+            "feature": "average_qualifying_basket_quantity_365d",
+            "mean_abs": 0.0019280512920307104
+          }
+        ],
+        "n_explained": 1000,
+        "period": "2011-04"
+      },
+      {
+        "features": [
+          {
+            "feature": "qualifying_purchase_dates_365d",
+            "mean_abs": 0.034911980729689866
+          },
+          {
+            "feature": "qualifying_purchase_occasions_365d",
+            "mean_abs": 0.029663850771776714
+          },
+          {
+            "feature": "qualifying_gross_merchandise_365d",
+            "mean_abs": 0.020550560806612963
+          },
+          {
+            "feature": "days_since_last_qualifying_purchase",
+            "mean_abs": 0.01891103632721503
+          },
+          {
+            "feature": "qualifying_gross_merchandise_90d",
+            "mean_abs": 0.01352217537782059
+          },
+          {
+            "feature": "qualifying_purchase_occasions_90d",
+            "mean_abs": 0.013104523146820124
+          },
+          {
+            "feature": "median_interpurchase_interval_days_365d",
+            "mean_abs": 0.005032752612794873
+          },
+          {
+            "feature": "qualifying_unique_product_count_365d",
+            "mean_abs": 0.004417210645728168
+          },
+          {
+            "feature": "average_basket_product_diversity_365d",
+            "mean_abs": 0.0029046771642064996
+          },
+          {
+            "feature": "average_qualifying_basket_value_365d",
+            "mean_abs": 0.0020017697226914115
+          },
+          {
+            "feature": "average_qualifying_basket_quantity_365d",
+            "mean_abs": 0.0019745527919631427
+          }
+        ],
+        "n_explained": 1000,
+        "period": "2011-05"
+      },
+      {
+        "features": [
+          {
+            "feature": "qualifying_purchase_dates_365d",
+            "mean_abs": 0.036209969093129915
+          },
+          {
+            "feature": "qualifying_purchase_occasions_365d",
+            "mean_abs": 0.02831129538749419
+          },
+          {
+            "feature": "days_since_last_qualifying_purchase",
+            "mean_abs": 0.02030234451188489
+          },
+          {
+            "feature": "qualifying_gross_merchandise_365d",
+            "mean_abs": 0.01870039011722316
+          },
+          {
+            "feature": "qualifying_gross_merchandise_90d",
+            "mean_abs": 0.013290925510515432
+          },
+          {
+            "feature": "qualifying_purchase_occasions_90d",
+            "mean_abs": 0.010734774642181531
+          },
+          {
+            "feature": "median_interpurchase_interval_days_365d",
+            "mean_abs": 0.006349017144800468
+          },
+          {
+            "feature": "qualifying_unique_product_count_365d",
+            "mean_abs": 0.002908473378965313
+          },
+          {
+            "feature": "average_qualifying_basket_value_365d",
+            "mean_abs": 0.002273893972260309
+          },
+          {
+            "feature": "average_qualifying_basket_quantity_365d",
+            "mean_abs": 0.0022578177122177844
+          },
+          {
+            "feature": "average_basket_product_diversity_365d",
+            "mean_abs": 0.0015482153752546881
+          }
+        ],
+        "n_explained": 1000,
+        "period": "2011-06"
+      }
+    ],
+    "explained_rows_per_development_fold": 1000,
+    "exploratory_holdout_by_month": [
+      {
+        "features": [
+          {
+            "feature": "qualifying_purchase_dates_365d",
+            "mean_abs": 0.043678890401429415
+          },
+          {
+            "feature": "qualifying_purchase_occasions_365d",
+            "mean_abs": 0.03441844913605826
+          },
+          {
+            "feature": "days_since_last_qualifying_purchase",
+            "mean_abs": 0.02801637137607447
+          },
+          {
+            "feature": "qualifying_gross_merchandise_365d",
+            "mean_abs": 0.02003261401775209
+          },
+          {
+            "feature": "qualifying_gross_merchandise_90d",
+            "mean_abs": 0.019885357905543126
+          },
+          {
+            "feature": "qualifying_purchase_occasions_90d",
+            "mean_abs": 0.019085581756892324
+          },
+          {
+            "feature": "median_interpurchase_interval_days_365d",
+            "mean_abs": 0.00936480967384382
+          },
+          {
+            "feature": "qualifying_unique_product_count_365d",
+            "mean_abs": 0.004512844569087563
+          },
+          {
+            "feature": "average_qualifying_basket_quantity_365d",
+            "mean_abs": 0.0033378287980798736
+          },
+          {
+            "feature": "average_qualifying_basket_value_365d",
+            "mean_abs": 0.002237675082908623
+          },
+          {
+            "feature": "average_basket_product_diversity_365d",
+            "mean_abs": 0.0014589305299771624
+          }
+        ],
+        "period": "2011-07"
+      },
+      {
+        "features": [
+          {
+            "feature": "qualifying_purchase_dates_365d",
+            "mean_abs": 0.03626995018532261
+          },
+          {
+            "feature": "qualifying_purchase_occasions_365d",
+            "mean_abs": 0.02778405858464546
+          },
+          {
+            "feature": "days_since_last_qualifying_purchase",
+            "mean_abs": 0.02521357538931315
+          },
+          {
+            "feature": "qualifying_gross_merchandise_90d",
+            "mean_abs": 0.017694842131069363
+          },
+          {
+            "feature": "qualifying_gross_merchandise_365d",
+            "mean_abs": 0.01657723709318506
+          },
+          {
+            "feature": "qualifying_purchase_occasions_90d",
+            "mean_abs": 0.016003540204115537
+          },
+          {
+            "feature": "median_interpurchase_interval_days_365d",
+            "mean_abs": 0.008577447108186087
+          },
+          {
+            "feature": "qualifying_unique_product_count_365d",
+            "mean_abs": 0.004010019700659406
+          },
+          {
+            "feature": "average_qualifying_basket_quantity_365d",
+            "mean_abs": 0.00333961680005518
+          },
+          {
+            "feature": "average_qualifying_basket_value_365d",
+            "mean_abs": 0.002065161334772945
+          },
+          {
+            "feature": "average_basket_product_diversity_365d",
+            "mean_abs": 0.001299175260088265
+          }
+        ],
+        "period": "2011-08"
+      },
+      {
+        "features": [
+          {
+            "feature": "qualifying_purchase_dates_365d",
+            "mean_abs": 0.039327766522848154
+          },
+          {
+            "feature": "qualifying_purchase_occasions_365d",
+            "mean_abs": 0.03050978484336014
+          },
+          {
+            "feature": "days_since_last_qualifying_purchase",
+            "mean_abs": 0.025898051539552915
+          },
+          {
+            "feature": "qualifying_gross_merchandise_365d",
+            "mean_abs": 0.018984501408132553
+          },
+          {
+            "feature": "qualifying_gross_merchandise_90d",
+            "mean_abs": 0.018275658199329945
+          },
+          {
+            "feature": "qualifying_purchase_occasions_90d",
+            "mean_abs": 0.01814373929039473
+          },
+          {
+            "feature": "median_interpurchase_interval_days_365d",
+            "mean_abs": 0.007786482258126988
+          },
+          {
+            "feature": "qualifying_unique_product_count_365d",
+            "mean_abs": 0.00477656244675322
+          },
+          {
+            "feature": "average_qualifying_basket_quantity_365d",
+            "mean_abs": 0.0031863446180339645
+          },
+          {
+            "feature": "average_qualifying_basket_value_365d",
+            "mean_abs": 0.0019893912001160796
+          },
+          {
+            "feature": "average_basket_product_diversity_365d",
+            "mean_abs": 0.0011613184992268033
+          }
+        ],
+        "period": "2011-09"
+      },
+      {
+        "features": [
+          {
+            "feature": "qualifying_purchase_dates_365d",
+            "mean_abs": 0.035265338000361
+          },
+          {
+            "feature": "qualifying_purchase_occasions_365d",
+            "mean_abs": 0.027648405139394434
+          },
+          {
+            "feature": "days_since_last_qualifying_purchase",
+            "mean_abs": 0.02384348593914934
+          },
+          {
+            "feature": "qualifying_gross_merchandise_365d",
+            "mean_abs": 0.017408568376594692
+          },
+          {
+            "feature": "qualifying_gross_merchandise_90d",
+            "mean_abs": 0.01675616300046217
+          },
+          {
+            "feature": "qualifying_purchase_occasions_90d",
+            "mean_abs": 0.015274711256029966
+          },
+          {
+            "feature": "median_interpurchase_interval_days_365d",
+            "mean_abs": 0.007521247602114565
+          },
+          {
+            "feature": "qualifying_unique_product_count_365d",
+            "mean_abs": 0.004406604228237873
+          },
+          {
+            "feature": "average_qualifying_basket_quantity_365d",
+            "mean_abs": 0.003414413266718884
+          },
+          {
+            "feature": "average_qualifying_basket_value_365d",
+            "mean_abs": 0.0019973755542881063
+          },
+          {
+            "feature": "average_basket_product_diversity_365d",
+            "mean_abs": 0.0013174405646916498
+          }
+        ],
+        "period": "2011-10"
+      },
+      {
+        "features": [
+          {
+            "feature": "qualifying_purchase_dates_365d",
+            "mean_abs": 0.03795399501445431
+          },
+          {
+            "feature": "qualifying_purchase_occasions_365d",
+            "mean_abs": 0.02891704137486547
+          },
+          {
+            "feature": "days_since_last_qualifying_purchase",
+            "mean_abs": 0.02566490128909179
+          },
+          {
+            "feature": "qualifying_gross_merchandise_90d",
+            "mean_abs": 0.018190977799023494
+          },
+          {
+            "feature": "qualifying_gross_merchandise_365d",
+            "mean_abs": 0.017241404820894243
+          },
+          {
+            "feature": "qualifying_purchase_occasions_90d",
+            "mean_abs": 0.016304836036242505
+          },
+          {
+            "feature": "median_interpurchase_interval_days_365d",
+            "mean_abs": 0.00970707520938717
+          },
+          {
+            "feature": "qualifying_unique_product_count_365d",
+            "mean_abs": 0.004152817018706504
+          },
+          {
+            "feature": "average_qualifying_basket_quantity_365d",
+            "mean_abs": 0.003529298814693886
+          },
+          {
+            "feature": "average_qualifying_basket_value_365d",
+            "mean_abs": 0.0022845881398994646
+          },
+          {
+            "feature": "average_basket_product_diversity_365d",
+            "mean_abs": 0.001223056607227838
+          }
+        ],
+        "period": "2011-11"
+      }
+    ],
+    "method": "Interventional TreeExplainer; fold-specific training-only 100-row background",
+    "output": "class-1 purchase probability contribution",
+    "overall_development": [
+      {
+        "feature": "qualifying_purchase_dates_365d",
+        "mean_abs": 0.0369349196973794,
+        "mean_signed": -0.0021862184730287067
+      },
+      {
+        "feature": "qualifying_purchase_occasions_365d",
+        "mean_abs": 0.028778990596361537,
+        "mean_signed": -0.0012285850844613174
+      },
+      {
+        "feature": "qualifying_gross_merchandise_365d",
+        "mean_abs": 0.01957061106961992,
+        "mean_signed": -0.0017520461472523377
+      },
+      {
+        "feature": "days_since_last_qualifying_purchase",
+        "mean_abs": 0.01831123902372965,
+        "mean_signed": -0.0025442958948598124
+      },
+      {
+        "feature": "qualifying_gross_merchandise_90d",
+        "mean_abs": 0.014122882169619821,
+        "mean_signed": -0.004364889552706915
+      },
+      {
+        "feature": "qualifying_purchase_occasions_90d",
+        "mean_abs": 0.011958564121806823,
+        "mean_signed": -0.0033799826314882394
+      },
+      {
+        "feature": "median_interpurchase_interval_days_365d",
+        "mean_abs": 0.005938250280762027,
+        "mean_signed": -0.00107361397081782
+      },
+      {
+        "feature": "qualifying_unique_product_count_365d",
+        "mean_abs": 0.004403549266989095,
+        "mean_signed": -0.0003632117602540461
+      },
+      {
+        "feature": "average_basket_product_diversity_365d",
+        "mean_abs": 0.0030225289774082923,
+        "mean_signed": 0.00015836400494583753
+      },
+      {
+        "feature": "average_qualifying_basket_quantity_365d",
+        "mean_abs": 0.002761384871375063,
+        "mean_signed": 6.471733842406804e-05
+      },
+      {
+        "feature": "average_qualifying_basket_value_365d",
+        "mean_abs": 0.00212100632245497,
+        "mean_signed": -0.00012226609705917921
+      }
+    ],
+    "rank_stability": [
+      {
+        "period_a": "2011-03",
+        "period_b": "2011-04",
+        "spearman": 0.9636363636363637
+      },
+      {
+        "period_a": "2011-03",
+        "period_b": "2011-05",
+        "spearman": 0.9636363636363637
+      },
+      {
+        "period_a": "2011-03",
+        "period_b": "2011-06",
+        "spearman": 0.9454545454545454
+      },
+      {
+        "period_a": "2011-04",
+        "period_b": "2011-05",
+        "spearman": 1.0
+      },
+      {
+        "period_a": "2011-04",
+        "period_b": "2011-06",
+        "spearman": 0.9636363636363637
+      },
+      {
+        "period_a": "2011-05",
+        "period_b": "2011-06",
+        "spearman": 0.9636363636363637
+      }
+    ]
+  },
+  "task": {
+    "development_customers": 4670,
+    "development_period": "March\u2013June 2011 expanding validation folds",
+    "development_prevalence": 0.1894779629522095,
+    "development_snapshots": 17221,
+    "features": "Frozen 11 point-in-time features over the preceding 365 days",
+    "holdout_customers": 4999,
+    "holdout_period": "July\u2013November 2011",
+    "holdout_prevalence": 0.2349575489110373,
+    "holdout_snapshots": 21672,
+    "name": "M2 established-customer next-month purchase propensity",
+    "outcome": "Any qualifying purchase in the next 30 days"
+  }
+}
