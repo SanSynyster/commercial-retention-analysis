@@ -51,6 +51,28 @@ class DashboardAppTests(unittest.TestCase):
         app.radio(key="cohort_population").set_value("first_observed_on_or_after_2010-12-01").run()
         self.assertFalse(app.exception)
 
+    def test_shared_data_sources_and_research_limitations_are_accessible(self) -> None:
+        app = self._run()
+        self.assertIn("Data Sources & Research Limitations", [item.label for item in app.expander])
+        copy = "\n".join(item.value for item in app.markdown)
+        for phrase in (
+            "Chen, D. (2012)",
+            "10.24432/C5CG6D",
+            "CC BY 4.0",
+            "duplicated overlap records removed",
+            "Chen, D. (2015)",
+            "10.24432/C5BW33",
+            "E-Mail Analytics and Data Mining Challenge",
+            "individual assignments and split files are not distributed",
+            "No formal redistribution licence",
+            "Historical description",
+            "Retrospective targeting",
+            "Randomised experimental findings",
+            "Hypothetical CRM scenarios",
+            "not a live customer-scoring or campaign-execution system",
+        ):
+            self.assertIn(phrase, copy)
+
     def test_navigation_registers_seven_pages(self) -> None:
         app = self._run()
         source = (ROOT / "app/page_registry.py").read_text(encoding="utf-8")

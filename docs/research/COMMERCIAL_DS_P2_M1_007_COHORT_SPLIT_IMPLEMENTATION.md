@@ -67,7 +67,7 @@ Result: **72 tests run; 71 passed and 1 skipped** (the Spark test requires Java)
 
 ## Provenance and reproducibility
 
-External cohort: `../source_data/uci_online_retail_ii/day21_customer_cohort_m1_007.parquet` (319,468 bytes; SHA-256 `0f2217598c5e58c83946edcb4f6a5eeb652b987d9e46f8b7779616c26342810e`).
+External cohort: `../source_data/uci_online_retail_ii/day21_customer_cohort_m1_007.parquet` (319,468 bytes; SHA-256 `0f2217598c5e58c83946edcb4f6a5eeb652b987d9e46f8b7779616c26342810e`), stored in the sibling source-data directory outside the repository.
 
 Adjacent `.manifest.json` records the verified input hashes and definitions:
 

@@ -23,7 +23,7 @@ From the development checkout, with the approved record already in place:
 ```sh
 B2B3_OUTCOME_REAL_DATA_AUTHORIZED=1 .venv/bin/python -B docs/recovery/COMMERCIAL_DS_003_STAGE_B2B3_OUTCOMES.py \
   --mode candidate-real \
-  --authorization-file /private/path/owner-outcome-authorization.json \
+  --authorization-file path/to/owner-outcome-authorization.json \
   --run-id <owner-approved-run-id>
 ```
 

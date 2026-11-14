@@ -8,14 +8,14 @@ The producer reuses the validated corrected-V2/O-9 pipeline and the B2B-2 popula
 
 ## Synthetic tests
 
-The verified pinned environment is Python 3.11.14 with pandas 3.0.2 and numpy 2.4.4 at:
+The verified pinned environment is Python 3.11.14 with pandas 3.0.2 and numpy 2.4.4 in the project virtual environment:
 
 `.venv/bin/python`
 
 This interpreter is used read-only; no files in the original checkout are changed. From the development repository root, run:
 
 ```sh
-cache_dir="$(mktemp -d /private/tmp/b2b3-pycache.XXXXXX)"
+cache_dir="$(mktemp -d)"
 chmod 700 "$cache_dir"
 PYTHONPYCACHEPREFIX="$cache_dir" .venv/bin/python -B -m unittest -v docs.recovery.test_COMMERCIAL_DS_003_STAGE_B2B3
 result=$?
@@ -51,7 +51,7 @@ Example only; do not run without separate owner authorization:
 
 ```sh
 B2B3_REAL_DATA_AUTHORIZED=1 .venv/bin/python -B docs/recovery/COMMERCIAL_DS_003_STAGE_B2B3.py \
-  --mode candidate-real --authorization-file /approved/private/owner-authorization.json \
+  --mode candidate-real --authorization-file path/to/owner-authorization.json \
   --operator-id OWNER_ID --run-id RUN_ID
 ```
 
