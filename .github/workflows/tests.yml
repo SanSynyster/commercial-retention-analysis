@@ -25,4 +25,4 @@ jobs:
           python -m pip install -r requirements-ci.txt
 
       - name: Run CI-safe validation
-        run: make validate-ci
+        run: make validate-ci PYTHON=python
