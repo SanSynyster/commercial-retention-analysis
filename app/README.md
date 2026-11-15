@@ -28,7 +28,7 @@ The root `.streamlit/config.toml` enables headless operation, keeps CORS and XSR
 
 ### Streamlit Community Cloud preparation
 
-Select `app/streamlit_app.py` as the entrypoint and Python 3.11 in Community Cloud's advanced settings. Community Cloud reads the app-specific `app/requirements.txt` in preference to the repository-root research dependency file. The committed `app_data/` JSON bundles are loaded from repository-relative paths. This repository is prepared for that deployment workflow, but has not been deployed or published.
+The public application is available at [commercial-retention-analysis.streamlit.app](https://commercial-retention-analysis.streamlit.app). For a Community Cloud deployment or redeployment, select `app/streamlit_app.py` as the entrypoint and Python 3.11 in Community Cloud's advanced settings. Community Cloud reads the app-specific `app/requirements.txt` in preference to the repository-root research dependency file. The committed `app_data/` JSON bundles are loaded from repository-relative paths.
 
 It does not perform live P3 model inference, train models at startup, read private source datasets, create customer-level scores or lists, or execute campaigns. It loads the committed aggregate bundles and calculates only the documented M4 planning scenarios in memory.
 
@@ -89,11 +89,11 @@ Evidence labels distinguish historical description, historical prediction, devel
 
 ## Tests
 
-The app-only environment installed from `requirements-app.txt` is sufficient for app startup and focused application/page tests. Tests for the full research repository also exercise modelling and data-analysis code, so install the separate research dependencies from the root `requirements.txt` in a research environment; do not treat the app-only dependency list as a complete test environment.
+The app-only environment installed from `requirements-app.txt` is sufficient for app startup and focused application/page tests. The full test suite also exercises modelling and data-analysis code; install the complete CI dependency set from root `requirements-ci.txt` in a separate environment.
 
 ```sh
 python3.11 -m venv .venv-research
-.venv-research/bin/python -m pip install -r requirements.txt
+.venv-research/bin/python -m pip install -r requirements-ci.txt
 ```
 
 Run the focused application and M4 tests with the app environment:

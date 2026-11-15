@@ -1,93 +1,136 @@
 # Commercial Retention Analytics
 
-A reproducible customer-behaviour and commercial analytics case study using corrected UCI Online Retail II transaction data. It asks: **How can a retailer understand repeat purchasing, customer concentration and observed customer activity without mistaking incomplete follow-up for churn?**
+**A practical analytics and decision-support project for understanding repeat purchasing, prioritising CRM attention, estimating customer value, and measuring campaign effects responsibly.**
 
-The corrected-V2 analysis is complete and independently reviewed. It links audited transaction rows to validated purchase occasions, censoring-aware outcomes and aggregate results. Earlier exploratory models, legacy SQL/dbt work and Tableau dashboards are not part of the corrected-V2 findings.
+[![Open the live Streamlit dashboard](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://commercial-retention-analysis.streamlit.app) [![Tests](https://github.com/SanSynyster/commercial-retention-analysis/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/SanSynyster/commercial-retention-analysis/actions/workflows/tests.yml)
 
-## What I built
+**Live dashboard:** [commercial-retention-analysis.streamlit.app](https://commercial-retention-analysis.streamlit.app)
 
-- Audited source duplication and removed only the reviewed overlap block, with pinned inputs, taxonomy validation and row/value reconciliation.
-- Built validated customer metrics, purchase occasions, maturity-aware repeat outcomes and first-observed cohorts.
-- Analysed gross concentration, an unlinked signed merchandise sensitivity and six descriptive customer groups.
-- Added deterministic reconciliation, 15 focused tests and a reproducible aggregate report with four figures.
+Python 3.11 · pandas · scikit-learn · XGBoost · LightGBM · SHAP · Streamlit · GitHub Actions
 
-## Verified findings
+## The commercial problem
 
-- **5,852** identifiable qualifying customers; **36,594** customer-by-invoice occasions from **788,127** qualifying merchandise lines.
-- **£17,123,740.997** identified qualifying gross merchandise.
-- The top **586** customers contribute **63.8114%** of identified qualifying gross.
-- **5,256** customers have mature 90-day follow-up; **596** have insufficient follow-up. Repeat results are reported by first-observed month and pre-/on-or-after-2010-12-01 population, with each stratum’s repeat numerator and mature denominator. **No pooled 90-day repeat rate is headlined.**
-- Among customers with repeat observed purchase days, **2,123** whose last observed purchase was within 59 days of the partial 2011-12-09 data end account for **73.99%** of identified qualifying gross. This is a retrospective description of observed activity, not a prediction or targeting result.
-- **£16,410,709.747** unlinked signed merchandise-line sensitivity across 5,875 identified customers, including 23 returns-only customers. It combines qualifying gross and identified merchandise returns/cancellations, which are not linked to original invoices; it is not accounting net sales or profit.
+Retention teams need to decide where analysis can help and where evidence is not strong enough to support an intervention. This project works through five practical questions:
 
-Other positive merchandise of £2,575,930.130 is not attributable to an identified customer in the source reconciliation, excluded from customer measures and not allocated. See the [scientific results report](reports/corrected_v2/corrected_v2_scientific_results.md) for definitions and full monthly results.
-Qualifying gross is a merchandise measure, not recognized accounting revenue, margin or profit.
+- Which customers are likely to make another purchase within a defined window?
+- Which customers might a CRM team prioritise under a fixed contact capacity?
+- What qualifying merchandise value and purchase timing might be observed over a future horizon?
+- How can campaign impact be measured with a randomized control group?
+- How do we keep a likely purchase separate from an incremental response caused by contact?
 
-## Visual findings
+The retail analysis uses corrected historical UCI Online Retail II transactions from 2009–2011. A separate historical randomized email experiment supplies causal evidence. Neither dataset represents a current CRM customer base.
 
-All charts use aggregate corrected-V2 results. Gray cohort cells are incomplete or unobserved, not zero.
+## Live application
 
-**Mature 90-day repeat conversion** — monthly strata are separated by first-observed population; the plot shows mature denominators and marks partial September follow-up.
+The [Streamlit dashboard](https://commercial-retention-analysis.streamlit.app) presents seven aggregate-only pages. It reads reviewed JSON bundles committed in `app_data/`; it does not train models at startup, score live customers, or execute campaigns.
 
-![Mature second-purchase conversion by first-observed population](reports/corrected_v2/figures/fig01_mature_90d_repeat_by_month.svg)
+| Page | What it covers |
+|---|---|
+| **Customer Overview** | Corrected purchase activity, mature 90-day repeat outcomes, customer concentration, first-observed cohorts, and descriptive frequency/recency groups. |
+| **Purchase Propensity** | Historical M1 new-customer and M2 established-customer prediction results, with exploratory calibration context. These are separate prediction tasks. |
+| **Predictive Intelligence** | Aggregate P3 model comparisons, Random Forest SHAP summaries, temporal stability, and calibration diagnostics. |
+| **Segmentation Intelligence** | Historical RFM profiles and supplementary exploratory three-cluster K-Means results, with subsequent observed purchasing outcomes. |
+| **Causal Evidence & Experimentation** | Hillstrom randomized assignment results, clearly separated from exploratory development uplift comparisons. |
+| **CRM Targeting Explorer** | Retrospective purchase capture for ranking policies at evaluated 5%, 10%, and 20% capacities. |
+| **CRM Experiment Feasibility** | A hypothetical randomized-pilot calculator for enrollment, allocation, minimum detectable effect, and scenario economics. |
 
-**First-observed cohort activity** — month 0 is cohort entry, not repeat retention; later activity is shown only for complete calendar months.
+The application is prepared for Streamlit Community Cloud. See the [app guide](app/README.md) for its page-level scope, evidence labels, runtime, bundle provenance, and deployment settings.
 
-![Maturity-aware first-observed cohort activity](reports/corrected_v2/figures/fig02_first_observed_cohort_activity.svg)
+### Screenshots
 
-**Qualifying gross concentration** — customer ranking uses identified qualifying gross; unattributed merchandise is disclosed outside the denominator.
+Dashboard screenshots will be added in a future documentation update.
 
-![Top-decile share of identified qualifying gross merchandise](reports/corrected_v2/figures/fig03_qualifying_gross_concentration.svg)
+## Analytics and modelling
 
-**Descriptive frequency × recency groups** — six mutually exclusive groups, not churn predictions or CRM recommendations.
+| Workstream | Purpose and evaluation | Verified finding |
+|---|---|---|
+| **Data preparation and QA** | Reconciled UCI Online Retail and Online Retail II, audited repeated records, validated product taxonomy, purchase occasions, monetary totals, and follow-up maturity. | Removed only the reviewed **22,523-row overlap block**; other repeated rows were retained. Corrected-V2 analysis reports **5,852 identifiable qualifying customers**, **36,594 customer–invoice occasions**, and **£17.124m identified qualifying gross merchandise**. This gross merchandise measure is not accounting revenue, margin, or profit. |
+| **Repeat-purchase propensity** | Point-in-time monthly established-customer snapshots predict at least one qualifying purchase in the next 30 days from the preceding 365 days. Development evaluation uses four temporal origins (March–June 2011) and mature labels. | On **17,221 development snapshots** from **4,670 customers** (18.95% positive), Random Forest achieved ROC-AUC **0.7824** and average precision **0.5395**, versus frozen regularised logistic regression (Logistic C) at **0.7752 / 0.5291**. This is a modest historical ranking advantage, conditional on the evaluated folds. |
+| **Model selection** | Logistic C and frequency ranking were benchmarked with Random Forest and HistGradientBoosting; bounded XGBoost and LightGBM extensions used the same temporal protocol. | XGBoost and LightGBM did not meet the predefined development adoption criteria over Random Forest. The reviewed conclusion retains Random Forest as a **development reference**, not a prospectively validated production model. |
+| **Calibration** | Calibration intercept/slope, Brier score, and log loss assess whether predicted probabilities agree with observed rates. Calibration experiments are distinct from ranking performance. | On the previously examined July–November holdout, purchase prevalence was **23.50%**, while model mean predictions were around **17.5%**. This historical prevalence shift and underprediction make probability use uncertain; no selected recalibration map is presented as ready for operational decisions. |
+| **Explainability** | SHAP attributes Random Forest predictions across 4,000 sampled development explanations; stability is compared across the four development origins. | 365-day purchase-date and purchase-occasion counts were the strongest average attributions. Correlated features can share attribution; SHAP explains model predictions and is not causal importance. |
+| **Customer value** | 30-day amount prediction is primary, assessed over four temporal development origins; 60-day results are secondary and more limited. Measures include MAE, RMSE, Tweedie deviance, and top-decile spend capture. | For 30-day gross merchandise, HistGradientBoosting MAE was **£128.61** versus **£119.49** for predicting zero; historical rate had the lowest RMSE (**£541.69**) versus HGB’s **£560.49**. No approach wins across all metrics. Outcomes are highly skewed and are not net revenue or profit. |
+| **Purchase timing / survival** | Kaplan–Meier and ridge Cox models estimate time to next qualifying purchase, treating non-purchases and incomplete observation as censored. | In the four March–June development folds, Cox 30-day-truncated Harrell C ranged **0.738–0.765**, compared with **0.500** for the population Kaplan–Meier ranking baseline. The short, repeated historical windows do not establish future performance or the effect of contacting customers. |
+| **Segmentation** | RFM is the primary descriptive grouping; a three-cluster K-Means solution is supplementary. March 2011 groups are compared with April–June observed purchase behaviour. | K-Means silhouette was **0.384** and mean seed ARI **0.993**. The reviewed evidence does not demonstrate meaningful incremental purchase discrimination beyond RFM. Segment outcome rates are retrospective, not calibrated probabilities or treatment effects. |
+| **Randomized causal inference** | A separate historical Hillstrom three-arm email experiment evaluates assignment effects on a locked test split; secondary outcomes receive multiplicity adjustment. | Men's-email assignment increased two-week website visits by **8.163 percentage points** versus no email (95% Newcombe interval **6.667 to 9.658 pp**; **4,262 vs 4,261** test assignments). Conversion and spend contrasts were inconclusive after adjustment. This is an effect in the historical experiment, not an effect estimate for UCI customers or current campaigns. |
+| **Uplift modelling** | Candidate CATE and policy rankings are compared on Hillstrom development data; test evaluation is reserved for the selected policy. | No personalized learner passed the prespecified development promotion rule. On the locked test, the selected constant-effect policy corresponds to random allocation within a 20% budget; it does not show that personalization improves value. |
+| **CRM targeting and experiment feasibility** | Historical purchase capture is measured at fixed contact capacities. A separate calculator illustrates assumptions for a future randomized pilot. | Propensity policies capture historical purchasers; they do not estimate incremental response. The feasibility page uses user-entered hypothetical values and estimates neither campaign effect nor observed savings, ROI, or profit. |
 
-![Six descriptive purchase-frequency and recency groups](reports/corrected_v2/figures/fig04_descriptive_frequency_recency_segments.svg)
+### How to read these results
 
-## Method and implementation
+The main propensity comparison is **development evidence** from temporal folds. July–November 2011 results reused in some reports are a **previously examined historical holdout**, labelled exploratory rather than untouched confirmation. Hillstrom’s locked-test visit result is **randomized experimental evidence** for that historical assignment and outcome. Development uplift-policy comparisons are not confirmatory test findings. None of these evaluations establishes prospective model generalisation or current campaign economics.
 
-The corrected source removes only the reviewed 22,523-row overlap block between Online Retail and Online Retail II, retaining other repeated rows. Reference hashes validate the corrected source, taxonomy, qualifying occasions and signed-line reconciliation. A purchase occasion groups qualifying positive merchandise lines by identified customer and invoice; distinct purchase days remain separate from invoice counts.
+## Architecture
 
-A 90-day repeat requires a qualifying purchase on a strictly later date within the half-open window. Only customers with a complete follow-up window enter the denominator; immature outcomes remain unknown. Cohorts use first-observed month, not acquisition date, and only fully observed calendar activity months are counted. The last complete month is November 2011.
-
-Customer concentration uses exact Decimal qualifying gross. The separate signed sensitivity adds identified merchandise returns/cancellations without invoice matching. Descriptive segments cross purchase-day frequency with recency as of the partial 2011-12-09 source end. None of these first-observed, recency or segment labels establishes acquisition, churn risk or treatment eligibility.
-
-The current corrected-V2 path is **Python 3.11 and pandas**, with Decimal monetary reconciliation, pinned references and deterministic validation. Fifteen focused tests cover metrics, censoring, reconciliation and segments; run them without raw data using `.venv/bin/python -m unittest discover -s docs/recovery -p 'test_COMMERCIAL_DS_007*.py'`. Earlier exploratory SQL/dbt, Spark, notebook and dashboard work is not part of the corrected-V2 findings. The separate Streamlit research application is described below. No Tableau deployment, production service, executed CRM campaign or deployed AI system is claimed.
-
-## Reproduce
-
-To render the report and four figures from verified aggregate outputs, run from the repository root:
-
-```sh
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python docs/recovery/COMMERCIAL_DS_007D_PACKAGE.py \
-  --input-dir data/processed/corrected_v2_customer_analytics \
-  --output-dir reports/corrected_v2
+```mermaid
+flowchart LR
+    A[UCI retail transactions] --> B[Duplicate audit, validation and preparation]
+    B --> C[Point-in-time features and mature outcomes]
+    C --> D[Temporal model evaluation, calibration, SHAP and segmentation]
+    E[Historical Hillstrom experiment] --> F[Randomized causal and uplift evaluation]
+    D --> G[Reviewed aggregate publication bundles]
+    F --> G
+    G --> H[Seven-page Streamlit dashboard]
 ```
 
-To rebuild those aggregates, first obtain the exact pinned files `data/raw/Online Retail.xlsx` and `data/raw/online_retail_II.csv`; raw files are not in Git. Verify hashes in [data provenance](docs/DATA_PROVENANCE.md), set up the supported environment, and run:
+The application consumes aggregate bundles rather than customer-level modelling outputs. The repository includes research code and documentation for data validation, feature engineering, benchmarking, evaluation, and bundle validation. This architecture does not include a live scoring service, production customer database, or real-time CRM integration.
+
+## Run locally
+
+### Run the dashboard
+
+Python **3.11** is the application runtime (`.python-version`). From the repository root:
 
 ```sh
 python3.11 -m venv .venv
-.venv/bin/python -m pip install -r requirements-minimal.txt
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python docs/recovery/COMMERCIAL_DS_007B_CUSTOMER_ANALYTICS.py
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python docs/recovery/COMMERCIAL_DS_007C_VALUE_SEGMENTS.py
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python docs/recovery/COMMERCIAL_DS_007D_PACKAGE.py --input-dir data/processed/corrected_v2_customer_analytics --output-dir reports/corrected_v2
+.venv/bin/python -m pip install -r requirements-app.txt
+.venv/bin/streamlit run app/streamlit_app.py
 ```
 
-The exact Online Retail II CSV acquisition/conversion is not packaged as a script; a different conversion may not match the pinned input. See the [results reproduction guide](reports/corrected_v2/README.md) for aggregate schemas and source commits. Customer-level outputs stay under ignored `data/processed/`.
+`requirements-app.txt` contains the application runtime dependencies. The app reads the committed aggregate bundles and can run without raw source datasets or network/database access.
 
-## Limitations
+### Run tests
 
-This is observational data from December 2009 through a partial December 9, 2011. Earlier customer history is left-censored; incomplete follow-up is handled explicitly. First-observed customers are not verified acquisitions. Unattributed activity is excluded from customer attribution, and returns/cancellations are unlinked. Segments are descriptive, not validated churn states. The inclusive 0–30-day recent-first-observed flag is a descriptive convention, not a validated CRM threshold or predictive feature. CRM intervention ideas remain proposed; no CRM experiment was executed.
+Install the CI dependency set for the full suite:
 
-## Interactive research application
+```sh
+python3.11 -m venv .venv-research
+.venv-research/bin/python -m pip install -r requirements-ci.txt
+.venv-research/bin/python -m unittest discover -s tests
+```
 
-The repository also contains a local four-page Streamlit application: [Customer Intelligence & Decision Support](app/README.md). It presents corrected-V2 customer description, separate M1/M2 historical purchase-prediction results, M3 retrospective targeting comparisons and a hypothetical M4 randomized-pilot feasibility calculator. These pages preserve the evidence boundaries above: retrospective purchasing is not causal campaign impact, and the pilot calculations are assumptions rather than measured effects. The application runs from reviewed aggregate bundles and does not require raw or customer-level data.
+The verified clean-environment run completed **276 tests with 11 expected skips**.
 
-## Repository map
+The CI workflow at [`.github/workflows/tests.yml`](.github/workflows/tests.yml) runs the repository's CI-safe validation using `requirements-ci.txt` and `make validate-ci PYTHON=python`. The focused application test command and notes about source-dependent skips are in [`app/README.md`](app/README.md#tests). Some rebuild tests require private/source aggregates and skip when those inputs are unavailable.
 
-- `docs/recovery/` — validated source, occasion and bridge contracts; customer-metric and segment scripts with tests; results-package builder.
-- `reports/corrected_v2/` — scientific report, reproduction guide and four SVG charts.
-- `docs/DATA_PROVENANCE.md` — source attribution and integrity pins.
-- `reports/corrected_v2/README.md` — current results-package reproduction guide.
+### Source data and aggregate bundles
 
-UCI Online Retail and Online Retail II datasets are attributed under CC BY 4.0; see [data provenance and attribution](docs/DATA_PROVENANCE.md). Project code is MIT-licensed; dataset and dependency terms are separate.
+Raw UCI transaction files and Hillstrom row-level data are not distributed in this repository. UCI source datasets are attributed under **CC BY 4.0**; see [data provenance and attribution](docs/DATA_PROVENANCE.md) for citations, integrity pins, and the corrected-V2 transformation. Obtain the exact pinned source files separately and verify their hashes before rebuilding source-dependent analyses. A different Online Retail II conversion may not reproduce the pinned input.
+
+Hillstrom’s original challenge data is attributed to MineThatData. The source CSV and row-level assignments/predictions are excluded; the app contains reviewed aggregate findings only. The source-data publication assessment records that dataset redistribution permission was not established. Do not infer a dataset licence from a software package that can download it.
+
+Do not run aggregate rebuilds as part of a routine app launch. For the corrected-V2 report reproduction and its source requirements, see the [corrected-V2 reproduction guide](reports/corrected_v2/README.md). For app bundle provenance and supported rebuild commands, see [`app/README.md`](app/README.md).
+
+## Repository guide
+
+| Path | Contents |
+|---|---|
+| `app/`, `app_data/` | Seven-page Streamlit application and committed aggregate-safe bundles. |
+| `src/` | Data preparation, feature, modelling, evaluation, feasibility, and bundle modules. |
+| `tests/` | Application, bundle, analytics, and research validation tests. |
+| `docs/research/` | Phase 2/3 evaluation protocols, results, reviews, and integration notes. |
+| `reports/` | Stakeholder summaries and corrected-V2 aggregate report. |
+| `docs/` | Reproducibility, data provenance, technical documentation, and navigation. |
+| `notebooks/`, `sql/`, `dbt/`, `databricks/` | Exploratory analysis and supporting engineering work; not all are part of the corrected-V2 findings. |
+
+Start with the [documentation index](docs/index.md), [reproducibility guide](docs/REPRODUCIBILITY.md), [data provenance](docs/DATA_PROVENANCE.md), and [technical skills matrix](docs/technical_skills_matrix.md). Deeper Phase 3 sources: [propensity benchmark](docs/research/COMMERCIAL_DS_P3_002_ADVANCED_ML_BENCHMARK.md), [XGBoost/LightGBM comparison](docs/research/COMMERCIAL_DS_P3_003_XGBOOST_LIGHTGBM_BENCHMARK.md), [SHAP](docs/research/COMMERCIAL_DS_P3_004_SHAP_EXPLAINABILITY.md), [calibration](docs/research/COMMERCIAL_DS_P3_005_CALIBRATION_UNCERTAINTY.md), [value and timing](docs/research/COMMERCIAL_DS_P3_006_FUTURE_VALUE_AND_PURCHASE_TIMING.md), [segmentation](docs/research/COMMERCIAL_DS_P3_007_ADVANCED_SEGMENTATION.md), and [causal synthesis](docs/research/COMMERCIAL_DS_P3_008D_CAUSAL_RESEARCH_SYNTHESIS.md).
+
+## Licences and attribution
+
+Project code is MIT-licensed; see [`LICENSE`](LICENSE). The software licence does not grant rights to third-party source datasets. UCI attribution and CC BY 4.0 terms are documented in [`docs/DATA_PROVENANCE.md`](docs/DATA_PROVENANCE.md). Hillstrom source data is not redistributed. Dataset sources retain their own terms.
+
+---
+
+**Suggested GitHub repository description:** `End-to-end customer retention analytics: data quality, propensity and value models, segmentation, causal evaluation, and a Streamlit decision-support dashboard.`
+
+**Suggested topics:** `data-science`, `customer-analytics`, `customer-retention`, `machine-learning`, `causal-inference`, `streamlit`, `python`, `explainable-ai`, `customer-segmentation`
